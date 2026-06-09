@@ -114,6 +114,10 @@ body{background:#0a0a0a;color:#e6edf3;font-family:'Segoe UI',-apple-system,sans-
 }
 .pit-tag{font-size:8px;color:#ffd700;background:rgba(255,215,0,.18);
   padding:1px 3px;border-radius:2px;font-weight:700}
+.dnf-tag{font-size:8px;color:#ef4444;background:rgba(239,68,68,.18);
+  padding:1px 4px;border-radius:2px;font-weight:700;flex-shrink:0}
+.t-row.dnf{opacity:0.42}
+.t-row.dnf:hover{opacity:0.62;background:#111}
 
 /* ── TELEMETRY BAR ──────────────────────────────────────────────────────── */
 #telem-bar{
@@ -401,6 +405,21 @@ input[type=range]{accent-color:#e10600;cursor:pointer}
   font-size:10px;margin-top:6px;padding-top:6px;border-top:1px solid #1a1a1a;
 }
 
+/* ── SAFETY CAR BANNER ──────────────────────────────────────────────────── */
+#sc-banner{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  background:rgba(255,193,7,.16);border:1.5px solid #FFC107;
+  border-radius:5px;padding:5px 22px;
+  font-size:11px;font-family:Consolas,monospace;font-weight:800;
+  color:#FFC107;letter-spacing:1px;text-transform:uppercase;
+  z-index:15;white-space:nowrap;pointer-events:none;display:none;
+  animation:scPulse .9s ease-in-out infinite;
+}
+@keyframes scPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.45);opacity:1}
+  50%{box-shadow:0 0 0 9px rgba(255,193,7,0);opacity:.65}
+}
+
 /* ── LAYER 3: BATTLE TRIGGERED BANNER ─────────────────────────────────── */
 #battle-trigger-banner{
   position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
@@ -461,9 +480,11 @@ input[type=range]{accent-color:#e10600;cursor:pointer}
       <div id="map-tooltip"></div>
       <!-- Layer 3: Top Battles (Divide & Conquer) -->
       <div id="battles-panel">
-        <div id="battles-title"><span data-i18n="ui-battles">⚔ TOP BATTLES</span> <span style="color:#333;font-size:7px;margin-left:auto">D&amp;C O(n log n)</span></div>
+        <div id="battles-title"><span data-i18n="ui-battles">⚔ TOP BATTLES</span> <span style="color:#333;font-size:7px;margin-left:auto">최근접쌍 O(n²)</span></div>
         <div id="battles-list"><div style="color:#333;font-size:9px">로딩 중...</div></div>
       </div>
+      <!-- Safety Car Banner -->
+      <div id="sc-banner">⚠ SAFETY CAR</div>
       <!-- Layer 3: Battle Triggered Banner (gap < 0.5s) -->
       <div id="battle-trigger-banner"></div>
     </div>
@@ -1000,6 +1021,8 @@ async function loadData() {
   initCoords(); initScene(); buildTrack(); await buildCars(); initGrid(); bindUI();
   init2DMap();
   initRTEngines();
+  computeRetirements();
+  computeSCPeriods();
   lbar(100);
   const PRE_RACE  = 8;
   const raceStart = window._racingLapStart ?? D.sessionStart;
@@ -1173,7 +1196,14 @@ function drawTrackMap() {
 
   // 배틀 dot 먼저 수집, 일반 dot은 먼저 그리고 배틀 dot은 나중에 (위에 렌더)
   const dotList = [];
+  const dnfList = []; // 리타이어 드라이버 별도 수집
   standings.forEach(({d, st, pos}) => {
+    // 리타이어한 드라이버는 별도 처리
+    const ret = window._driverRetirements?.[d.name];
+    if (ret && simTime >= ret.retiredAt) {
+      dnfList.push(d);
+      return;
+    }
     let x, y;
     const tel = _raceStarted ? getTelAt(d.name, simTime) : null;
     if (tel) {
@@ -1260,6 +1290,44 @@ function drawTrackMap() {
     ctx.fillStyle = isBattle ? '#fff' : isSelected ? '#fff' : d.color;
     ctx.font = `bold ${isBattle||isSelected?10:8}px Consolas, monospace`;
     ctx.fillText(d.name, x + dotR + 4, y);
+  });
+
+  // ── DNF 드라이버: 마지막 위치를 트랙 외측으로 밀어 X 마커 표시 ───────────
+  const cx = _mapW / 2, cy = _mapH / 2;
+  dnfList.forEach(d => {
+    const tel = D.driverTelemetry[d.name];
+    if (!tel?.length) return;
+    const lt = tel[tel.length - 1];
+    const mp = toMap(lt[1], lt[2]);
+    // 맵 중심에서 벗어나는 방향으로 45px 오프셋 (트랙 외측)
+    const dx = mp.x - cx, dy = mp.y - cy;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const px = mp.x + (dx / len) * 45;
+    const py = mp.y + (dy / len) * 45;
+
+    ctx.save();
+    ctx.globalAlpha = 0.52;
+    // X 마커
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(px - 5, py - 5); ctx.lineTo(px + 5, py + 5);
+    ctx.moveTo(px + 5, py - 5); ctx.lineTo(px - 5, py + 5);
+    ctx.stroke();
+    // 팀 컬러 원 (작게, 흐리게)
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // 이름 + DNF 레이블
+    ctx.fillStyle = '#666';
+    ctx.font = 'bold 7px Consolas, monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(d.name + ' DNF', px + 8, py);
+    ctx.restore();
   });
 }
 
@@ -2173,10 +2241,14 @@ function updateTower(){
 
   let rows=D.drivers.map(d=>{
     const st=curState(d.name)||{pos:20,comp:'M',lap:1,pit:0,tl:0};
-    return{...d,...st,officialPos:st.pos};
+    const ret = window._driverRetirements?.[d.name];
+    const isDnf = !!(ret && simTime >= ret.retiredAt);
+    return{...d,...st,officialPos:st.pos,isDnf,retiredAt:ret?.retiredAt??0,lastLap:ret?.lastLap??0,dnfStatus:ret?.status??'DNF'};
   });
   if (raceOn) {
-    rows = rows
+    const active  = rows.filter(r => !r.isDnf);
+    const retired = rows.filter(r =>  r.isDnf);
+    const sortedActive = active
       .map(s => {
         const fr = getTrackFraction(s.name);
         const trackPos = fr ? fr.lap + fr.t : -Infinity;
@@ -2184,6 +2256,9 @@ function updateTower(){
       })
       .sort((a,b)=>b.trackPos-a.trackPos || a.officialPos-b.officialPos)
       .map((s,i)=>({...s,pos:i+1}));
+    // 리타이어 드라이버: 가장 늦게 리타이어한 순서로 정렬 (active 바로 아래)
+    retired.sort((a,b) => (b.retiredAt||0) - (a.retiredAt||0));
+    rows = [...sortedActive, ...retired];
   } else {
     rows = rows.sort((a,b)=>a.officialPos-b.officialPos);
   }
@@ -2195,8 +2270,6 @@ function updateTower(){
   // ── LAYER 1: BRUTE FORCE O(D²) — DRS 가용 드라이버 ──────────────────────
   _drsAvailable = raceOn ? computeDRS_BruteForce(rows) : new Set();
 
-  // ── LAYER 2: D&C O(log L) — 언더컷 추천 드라이버 ────────────────────────
-  const undercutSet = raceOn ? computeUndercutSet(rows) : new Set();
 
   let html='';
   rows.forEach((s,i)=>{
@@ -2221,8 +2294,24 @@ function updateTower(){
       (_cachedBattles[0].ahead.name===s.name || _cachedBattles[0].behind.name===s.name);
     const drs=_drsAvailable.has(s.name)
       ?`<span class="drs-badge${inBattle?' drs-badge-hot':''}">DRS</span>`:'';
-    const ucut=undercutSet.has(s.name)?`<span class="pit-badge">⚡PIT NOW</span>`:'';
     const sel=selectedDriver===s.name?' selected':'';
+
+    // ── DNF / DNS 드라이버: 하단 별도 row ─────────────────────────────────
+    if (s.isDnf) {
+      const lapsShort = TOTAL_LAPS - (s.lastLap || 0);
+      const gapText = s.dnfStatus === 'DNS' ? 'DNS' : `−${lapsShort}L`;
+      html+=`<div class="t-row dnf${sel}" onclick="selectDrv('${s.name}')">
+        <div class="pos-box" style="background:#1a1a1a;color:#444">${s.lastLap||'—'}</div>
+        <span class="pos-delta"></span>
+        <div class="team-bar" style="background:${s.color};opacity:0.35"></div>
+        <span class="d-abbr" style="color:#444">${s.name}</span>
+        <span class="dnf-tag">${s.dnfStatus||'DNF'}</span>
+        <span class="d-gap" style="color:#555">${gapText}</span>
+        <div class="tyre-dot" style="background:#1a1a1a;color:#555;opacity:0.6">${s.comp||'?'}</div>
+      </div>`;
+      return;
+    }
+
     let gap='';
     if(i===0) gap=`<span style="color:#ffd700">LDR</span>`;
     else {
@@ -2247,7 +2336,7 @@ function updateTower(){
       ${posDelta}
       <div class="team-bar" style="background:${s.color}"></div>
       <span class="d-abbr" style="color:${s.color}">${s.name}</span>
-      ${pit}${drs}${ucut}
+      ${pit}${drs}
       <span class="d-gap">${gap}</span>
       <div class="tyre-dot" style="background:${tc};color:${s.comp==='S'?'#fff':'#1a1a1a'}">${s.comp}</div>
     </div>`;
@@ -2272,83 +2361,9 @@ function updateUndercutPanel(name){
   const emptyEl = document.getElementById('ucp-empty');
   const dataEl  = document.getElementById('ucp-data');
   if (!emptyEl || !dataEl) return;
-  if (!name) {
-    emptyEl.style.display = 'flex';
-    dataEl.style.display  = 'none';
-    return;
-  }
-
-  const info = D?.drivers?.find(d => d.name === name);
-  const st   = curState(name);
-  if (!info || !st) {
-    emptyEl.style.display = 'flex';
-    dataEl.style.display  = 'none';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  dataEl.style.display  = 'flex';
-
-  // 드라이버 기본 정보
-  const compColor = { S:'#FF5252', M:'#FFC107', H:'#ECEFF1' };
-  document.getElementById('ucp-drv-color').style.background = info.color;
-  document.getElementById('ucp-drv-name').textContent = name;
-  document.getElementById('ucp-drv-name').style.color = info.color;
-  document.getElementById('ucp-drv-team').textContent = info.fullTeam || info.team || '';
-
-  const r = calcUndercutProb(name);
-
-  if (!r) {
-    // 피트 중에는 "지금 피트인할 확률"이 더 이상 적용되지 않으므로 상태를 명시한다.
-    const isPitting = !!st.pit;
-    document.getElementById('ucp-prob-val').textContent = isPitting ? t('js-pit') : '—%';
-    document.getElementById('ucp-prob-val').style.color = isPitting ? '#ffd700' : '#555';
-    document.getElementById('ucp-prob-bar').style.width = '0%';
-    document.getElementById('ucp-prob-bar').style.background = isPitting ? '#ffd700' : '#555';
-    document.getElementById('ucp-gap').textContent = isPitting ? t('js-pit') : '—';
-    document.getElementById('ucp-front-name').textContent = isPitting ? t('js-in-lap') : (name === D.drivers[0]?.name ? t('js-leader') : '—');
-    document.getElementById('ucp-comp').textContent = st.comp;
-    document.getElementById('ucp-comp').style.color = compColor[st.comp]||'#e6edf3';
-    document.getElementById('ucp-age-sub').textContent = `${st.tl} ${t('js-laps')}${isPitting ? ' · '+t('js-pit') : ''}`;
-    document.getElementById('ucp-pace').textContent = '—';
-    document.getElementById('ucp-warmup').textContent = isPitting ? t('js-pit-lane') : t('js-warmup-blank');
-    document.getElementById('ucp-net').textContent = isPitting ? t('js-exec') : '—';
-    document.getElementById('ucp-net').style.color = isPitting ? '#ffd700' : '#e6edf3';
-    document.getElementById('ucp-optlap').textContent = isPitting ? `IN ${st.lap} S${st.sector}` : t('js-opt-lap-blank');
-    return;
-  }
-
-  // ── 확률 표시 ──────────────────────────────────────────────────────────
-  const prob = r.prob;
-  const probColor = prob >= 70 ? '#22c55e' : prob >= 45 ? '#FFC107' : '#ef4444';
-  document.getElementById('ucp-prob-val').textContent = prob + '%';
-  document.getElementById('ucp-prob-val').style.color = probColor;
-  document.getElementById('ucp-prob-bar').style.width = prob + '%';
-  document.getElementById('ucp-prob-bar').style.background = probColor;
-
-  // ── 갭 ─────────────────────────────────────────────────────────────────
-  document.getElementById('ucp-gap').textContent = r.gap + 's';
-  document.getElementById('ucp-gap').style.color = parseFloat(r.gap) <= 1.5 ? '#22c55e' : '#e6edf3';
-  document.getElementById('ucp-front-name').textContent = r.frontName;
-
-  // ── 타이어 ─────────────────────────────────────────────────────────────
-  document.getElementById('ucp-comp').textContent = r.comp;
-  document.getElementById('ucp-comp').style.color = compColor[r.comp]||'#e6edf3';
-  document.getElementById('ucp-age-sub').textContent = `${r.age} ${t('js-laps')}`;
-
-  // ── 페이스 이득 ────────────────────────────────────────────────────────
-  document.getElementById('ucp-pace').textContent = '+' + r.paceDelta + 's';
-  document.getElementById('ucp-pace').style.color = '#22c55e';
-
-  // ── 피트 손실 + 웜업 ───────────────────────────────────────────────────
-  document.getElementById('ucp-warmup').textContent = _lang==='ko' ? `웜업 ${r.warmup}초` : `WARMUP ${r.warmup}s`;
-
-  // ── 순이득 ─────────────────────────────────────────────────────────────
-  const net = parseFloat(r.netGain);
-  document.getElementById('ucp-net').textContent = (net >= 0 ? '+' : '') + r.netGain + 's';
-  document.getElementById('ucp-net').style.color = net >= 0 ? '#22c55e' : '#ef4444';
-  document.getElementById('ucp-optlap').textContent = _lang==='ko' ? `최적 ${r.optLabel} (${r.bsIters}회)` : `OPT ${r.optLabel} (${r.bsIters}eval)`;
-
-
+  // B&B 비활성 상태: 항상 대기 상태 표시
+  emptyEl.style.display = 'flex';
+  dataEl.style.display  = 'none';
 }
 
 function updateTelemBar(){
@@ -2426,19 +2441,18 @@ function togglePod() {
 // UI BINDINGS
 // ═══════════════════════════════════════════════════════════════════════════
 function computeDRS_BruteForce() {
+  // 어떤 드라이버든 마지막 랩을 완주하면 DRS 전체 꺼짐
+  const raceFinished = D?.drivers?.some(d => {
+    const fr = getTrackFraction(d.name);
+    return fr && fr.lap >= TOTAL_LAPS;
+  });
+  if (raceFinished) return new Set();
   return _rtCache ? computeRT_DRS() : new Set(algorithmFrameAt(simTime)?.drs ?? []);
 }
 
-function computeUndercutSet() {
-  return _rtCache ? computeUndercutSet_RT() : new Set(algorithmFrameAt(simTime)?.undercut ?? []);
-}
-
-function calcUndercutProb(name) {
-  return _rtCache ? calcUndercutProb_RT(name) : (algorithmFrameAt(simTime)?.undercutDetails?.[name] ?? null);
-}
 
 function findTopBattles_DC(k) {
-  return _rtCache ? computeRT_Battles(k) : (algorithmFrameAt(simTime)?.battles ?? []).filter(b => b.gap < 5).slice(0, k ?? 3);
+  return computeClosestPairBattles(k ?? 3);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2519,6 +2533,8 @@ async function switchRace(key) {
     // ── 재초기화 ────────────────────────────────────────────────────────
     initCoords(); buildTrack(); await buildCars(); initGrid();
     init2DMap(); initRTEngines();
+    computeRetirements();
+    computeSCPeriods();
 
     // ── 시뮬레이션 상태 리셋 ────────────────────────────────────────────
     const raceStart = Math.min(...Object.values(D.driverLaps).filter(l=>l.length).map(l=>l[0][0]));
@@ -2560,6 +2576,55 @@ async function switchRace(key) {
     return;
   }
   loadEl.style.display = 'none';
+}
+
+// ── Safety Car 기간 계산 ─────────────────────────────────────────────────
+function computeSCPeriods() {
+  window._scPeriods = [];
+  const events = D?.scEvents;
+  if (!events?.length) return;
+  // 연속된 이벤트(200s 이내)를 한 그룹으로 묶어 [start, end] 구간 생성
+  let gStart = events[0].t, gLast = events[0].t;
+  for (let i = 1; i < events.length; i++) {
+    if (events[i].t - gLast > 200) {
+      window._scPeriods.push({ start: gStart, end: gLast + 150 });
+      gStart = events[i].t;
+    }
+    gLast = events[i].t;
+  }
+  window._scPeriods.push({ start: gStart, end: gLast + 150 });
+}
+
+function updateSCBanner() {
+  const banner = document.getElementById('sc-banner');
+  if (!banner) return;
+  const active = window._scPeriods?.some(p => simTime >= p.start && simTime <= p.end) ?? false;
+  banner.style.display = active ? 'block' : 'none';
+}
+
+// ── DNF / DNS 판별: 레이스 종료 전 텔레메트리가 끊긴 드라이버 ─────────────
+function computeRetirements() {
+  window._driverRetirements = {};
+  if (!D) return;
+  const total = TOTAL_LAPS;
+  for (const d of D.drivers) {
+    const laps = D.driverLaps[d.name] || [];
+    const tel  = D.driverTelemetry[d.name] || [];
+    if (!tel.length) {
+      // 텔레메트리 없음 = DNS
+      window._driverRetirements[d.name] = { retiredAt: 0, lastLap: 0, status: 'DNS' };
+      continue;
+    }
+    if (!laps.length) continue;
+    const lastLap = laps[laps.length - 1][2];
+    if (lastLap < total - 1) {
+      window._driverRetirements[d.name] = {
+        retiredAt: tel[tel.length - 1][0],
+        lastLap,
+        status: 'DNF',
+      };
+    }
+  }
 }
 
 function _clearRaceObjects() {
@@ -2688,28 +2753,45 @@ function initRTEngines() {
   _rtBB    = new BranchBoundEngine(_rtCache);
 }
 
-// ── [1] D&C Closest Pair: 상위 배틀 목록 ────────────────────────────────
-function computeRT_Battles(k) {
+// ── 2D 최근접쌍: 시뮬레이션 GPS 좌표 기반 O(n²), n≤20 ────────────────────
+function computeClosestPairBattles(k = 3) {
   const raceOn = simTime >= (window._racingLapStart ?? D.sessionStart);
   if (!raceOn) return [];
-  const pos = [];
+
+  // 활성 드라이버의 현재 GPS 위치 수집
+  const pts = [];
   for (const d of D.drivers) {
-    const fr = getTrackFraction(d.name), st = curState(d.name);
-    if (!fr || !st) continue;
-    pos.push({ d, fr, st, tp: fr.lap + fr.t });
+    const ret = window._driverRetirements?.[d.name];
+    if (ret && simTime >= ret.retiredAt) continue;
+    const tel = getTelAt(d.name, simTime);
+    if (!tel) continue;
+    const fr = getTrackFraction(d.name);
+    pts.push({ name: d.name, color: d.color, x: tel.x, y: tel.y, speed: tel.speed,
+               tp: fr ? fr.lap + fr.t : -Infinity });
   }
-  pos.sort((a, b) => b.tp - a.tp);
+  if (pts.length < 2) return [];
+
+  // 모든 쌍의 유클리드 거리 → 속도로 초 환산
   const pairs = [];
-  for (let i = 1; i < pos.length; i++) {
-    const ah = pos[i - 1], bh = pos[i];
-    const diff = ah.tp - bh.tp;
-    if (diff > 1.0) continue;
-    const gap = diff * ((ah.st.lt || 95) + (bh.st.lt || 95)) / 2;
-    if (gap < 0 || gap > 5) continue;
-    pairs.push({ ahead: { name: ah.d.name, color: ah.d.color }, behind: { name: bh.d.name, color: bh.d.color }, gap });
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 1; j < pts.length; j++) {
+      const a = pts[i], b = pts[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const distM = Math.sqrt(dx * dx + dy * dy);
+      const avgSpeedMs = ((a.speed + b.speed) / 2) / 3.6;
+      const gapSec = avgSpeedMs > 1 ? distM / avgSpeedMs : 999;
+      if (gapSec >= 5) continue;
+      // 트랙 진행도 기준으로 ahead/behind 결정
+      const aIsAhead = a.tp >= b.tp;
+      pairs.push({
+        ahead:  aIsAhead ? { name: a.name, color: a.color } : { name: b.name, color: b.color },
+        behind: aIsAhead ? { name: b.name, color: b.color } : { name: a.name, color: a.color },
+        gap: gapSec,
+      });
+    }
   }
   pairs.sort((a, b) => a.gap - b.gap);
-  return pairs.slice(0, k ?? 3);
+  return pairs.slice(0, k);
 }
 
 // ── [2] Brute Force DRS: gap ≤ 1s 전수 체크 ─────────────────────────────
@@ -2734,49 +2816,6 @@ function computeRT_DRS() {
   return drsSet;
 }
 
-// ── 언더컷 확률 계산 (RT) ────────────────────────────────────────────────
-function calcUndercutProb_RT(name) {
-  if (!_rtCache) return null;
-  const st = curState(name);
-  if (!st || st.pit || st.lap < 12 || st.lap > 44) return null;
-  const fr = getTrackFraction(name);
-  if (!fr) return null;
-  const myTP = fr.lap + fr.t;
-  let frontName = null, minDiff = Infinity;
-  for (const d of D.drivers) {
-    if (d.name === name) continue;
-    const dfr = getTrackFraction(d.name);
-    if (!dfr) continue;
-    const diff = (dfr.lap + dfr.t) - myTP;
-    if (diff > 0 && diff < minDiff) { minDiff = diff; frontName = d.name; }
-  }
-  if (!frontName || minDiff > 1.0) return null;
-  const fst    = curState(frontName);
-  const gapSecs = +(minDiff * ((st.lt || 95) + (fst?.lt || 95)) / 2).toFixed(2);
-  const comp = st.comp, tl = st.tl || 1;
-  const deg  = _rtCache.degRate(name, comp);
-  const pdelta = +(deg * tl).toFixed(2);
-  const wu    = +(_rtCache.compound(comp).warmup).toFixed(1);
-  const net   = +(pdelta * 5 - 23.5 - wu).toFixed(2);
-  let prob = 35 + Math.max(0, net * 4);
-  if (gapSecs < 2) prob += 15;
-  if (gapSecs < 1) prob += 10;
-  if (tl > 20)     prob += 10;
-  prob = Math.round(Math.max(5, Math.min(95, prob)));
-  return {
-    prob, gap: gapSecs.toFixed(2), frontName,
-    comp, age: Math.round(tl), paceDelta: pdelta.toFixed(2),
-    warmup: wu.toFixed(1), netGain: net.toFixed(2),
-    optLabel: `L${st.lap + 1}`, bsIters: Math.max(8, Math.min(60, (TOTAL_LAPS - st.lap) * 3)),
-  };
-}
-
-function computeUndercutSet_RT() {
-  if (!_rtCache) return new Set();
-  const s = new Set();
-  for (const d of D.drivers) { const r = calcUndercutProb_RT(d.name); if (r?.prob >= 55) s.add(d.name); }
-  return s;
-}
 
 function bindUI(){
   document.getElementById('btn-play').addEventListener('click',()=>{
@@ -2826,7 +2865,7 @@ function getTrackFraction(name) {
 // ═══════════════════════════════════════════════════════════════════════════
 function updateBattlesOverlay() {
   const now = performance.now();
-  if (now - _lastBattles < 800) return;
+  if (now - _lastBattles < 500) return;
   _lastBattles = now;
 
   const battles = findTopBattles_DC(3);
@@ -3015,8 +3054,14 @@ function animate() {
 
   const dt = Math.min(rawDt * speedMult, 0.5);
 
-  // Update all car meshes
+  // Update all car meshes (리타이어한 차는 3D에서 숨김)
   D.drivers.forEach(d => {
+    const ret = window._driverRetirements?.[d.name];
+    if (ret && simTime >= ret.retiredAt) {
+      const car = carMeshes[d.name];
+      if (car) car.visible = false;
+      return;
+    }
     const tel = getTelAt(d.name, simTime);
     updateCar(d.name, tel, dt);
   });
@@ -3046,6 +3091,7 @@ function animate() {
 
   updateTelemBar();
   updateBattlesOverlay();
+  updateSCBanner();
   updateTopBar();
   updateDpEta();          // [DP] 랩별 예상 완주 시간
   checkBranchBound();     // [B&B] 피트인 시점 팝업 트리거
