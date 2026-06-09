@@ -1,0 +1,2745 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>F1 2021 French GP — Live Timing</title>
+<style>
+/* ── RESET ─────────────────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#e6edf3;font-family:'Segoe UI',-apple-system,sans-serif;overflow-y:auto;overflow-x:hidden;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── TOP BAR ────────────────────────────────────────────────────────────── */
+#top-bar{
+  height:44px;background:#0d0d0d;
+  border-bottom:2px solid #e10600;
+  display:flex;align-items:center;padding:0 16px;gap:16px;flex-shrink:0;
+}
+#tb-event{font-size:13px;font-weight:900;letter-spacing:1.2px;color:#fff;white-space:nowrap}
+#tb-circuit{font-size:10px;color:#8b949e;margin-left:-8px}
+#tb-sep{flex:1}
+#tb-lap{font-size:12px;font-weight:700;color:#ffd700;font-family:Consolas;white-space:nowrap}
+#tb-time{font-size:12px;color:#8b949e;font-family:Consolas;white-space:nowrap;min-width:60px;text-align:right}
+#btn-pod{
+  background:#e10600;border:none;color:#fff;padding:5px 14px;
+  border-radius:4px;cursor:pointer;font-weight:800;font-size:11px;
+  letter-spacing:.6px;white-space:nowrap;transition:background .15s;
+}
+#btn-pod:hover{background:#c00500}
+#btn-lang{
+  background:transparent;border:1px solid #333;color:#8b949e;
+  padding:2px 9px;border-radius:3px;cursor:pointer;font-size:10px;
+  font-weight:700;letter-spacing:.5px;transition:all .15s;white-space:nowrap;
+  font-family:'Segoe UI',-apple-system,sans-serif;
+}
+#btn-lang:hover{border-color:#666;color:#e6edf3}
+
+/* ── RACE tag ───────────────────────────────────────────────────────────── */
+.race-tag{background:#e10600;color:#fff;font-size:9px;font-weight:800;
+  padding:2px 7px;border-radius:3px;letter-spacing:.8px}
+
+/* ── MAIN LAYOUT ────────────────────────────────────────────────────────── */
+#main{display:flex;align-items:stretch;flex-shrink:0}
+
+/* ── LEFT COLUMN ───────────────────────────────────────────────────────── */
+#left-col{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+/* ── MAP AREA ───────────────────────────────────────────────────────────── */
+#map-area{flex:1;min-width:0;min-height:320px;position:relative;background:#0d1117;overflow:hidden}
+#track-map{display:block;width:100%;height:100%}
+
+/* ── UNDERCUT PANEL ─────────────────────────────────────────────────────── */
+
+/* ── RIGHT PANEL (TIMING TOWER) ─────────────────────────────────────────── */
+#right-panel{
+  width:260px;flex-shrink:0;background:#0d0d0d;
+  border-left:1px solid #1c1c1c;display:flex;flex-direction:column;overflow:visible;align-self:stretch;
+}
+#tower-header{
+  padding:6px 10px;background:#111;font-size:9px;color:#666;
+  font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  border-bottom:1px solid #1c1c1c;display:flex;align-items:center;gap:6px;flex-shrink:0;
+}
+#tower-rows{overflow-y:visible;flex:1}
+.t-row{
+  display:flex;align-items:center;padding:4px 8px;
+  border-bottom:1px solid #111;font-size:11px;
+  font-family:Consolas,monospace;cursor:pointer;
+  transition:background .1s;gap:5px;min-height:29px;
+}
+.t-row:hover{background:#161616}
+.t-row.selected{background:rgba(225,6,0,.12);border-left:3px solid #e10600}
+.t-row.pos-up{background:rgba(34,197,94,.08)}
+.t-row.pos-down{background:rgba(239,68,68,.08)}
+.pos-box{
+  width:20px;height:20px;border-radius:3px;display:flex;
+  align-items:center;justify-content:center;
+  font-weight:800;font-size:10px;color:#fff;flex-shrink:0;
+  background:#1a1a1a;
+}
+.pos-box.top3{background:#b8860b}
+.pos-box.pos-up{background:#15803d;box-shadow:0 0 0 1px rgba(34,197,94,.55)}
+.pos-box.pos-down{background:#b91c1c;box-shadow:0 0 0 1px rgba(239,68,68,.55)}
+.pos-delta{
+  min-width:20px;font-size:8px;font-weight:800;letter-spacing:.1px;
+  font-family:Consolas,monospace;flex-shrink:0;
+}
+.pos-delta.up{color:#22c55e}
+.pos-delta.down{color:#ef4444}
+.team-bar{width:3px;height:20px;border-radius:1px;flex-shrink:0}
+.d-abbr{font-weight:700;font-size:11px;min-width:30px;letter-spacing:.3px}
+.d-gap{color:#666;font-size:9px;margin-left:auto;text-align:right;min-width:36px}
+.tyre-dot{
+  width:14px;height:14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;font-weight:800;flex-shrink:0;
+}
+.pit-tag{font-size:8px;color:#ffd700;background:rgba(255,215,0,.18);
+  padding:1px 3px;border-radius:2px;font-weight:700}
+
+/* ── TELEMETRY BAR ──────────────────────────────────────────────────────── */
+#telem-bar{
+  min-height:90px;height:auto;background:#0a0a0a;border-top:1px solid #1c1c1c;
+  flex-shrink:0;display:flex;align-items:center;padding:0 16px;gap:20px;flex-wrap:wrap;
+}
+#telem-drv{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#telem-color{width:3px;height:44px;border-radius:2px;flex-shrink:0}
+#telem-name{font-size:18px;font-weight:900;letter-spacing:.5px}
+#telem-team{font-size:14px;color:#aab4be;margin-top:2px}
+#telem-stats{display:flex;gap:14px;align-items:center}
+.ts-box{display:flex;flex-direction:column;align-items:center;min-width:40px}
+.ts-lbl{font-size:12px;color:#e6edf3;text-transform:uppercase;letter-spacing:.5px;margin-bottom:1px}
+.ts-val{font-size:18px;font-weight:900;font-family:Consolas;line-height:1}
+.ts-unit{font-size:12px;color:#e6edf3;margin-top:1px}
+#telem-bars{flex:1;display:flex;flex-direction:column;gap:6px;max-width:260px}
+.tb-row{display:flex;align-items:center;gap:8px}
+.tb-lbl{font-size:12px;color:#e6edf3;width:32px;text-align:right;flex-shrink:0;font-family:Consolas}
+.tb-bg{flex:1;height:6px;background:#1a1a1a;border-radius:3px;overflow:hidden}
+.tb-fill{height:100%;border-radius:3px;transition:width .08s}
+.tb-val{font-size:14px;font-family:Consolas;color:#e6edf3;width:40px;text-align:right;flex-shrink:0}
+#telem-extra{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.te-box{font-size:17px;font-family:Consolas;color:#e6edf3;text-align:center}
+.te-box .te-v{font-size:20px;font-weight:900;color:#e6edf3;display:block}
+#telem-empty{color:#aab4be;font-size:17px}
+
+/* ── CONTROLS ───────────────────────────────────────────────────────────── */
+#controls{
+  height:40px;background:#0a0a0a;border-top:1px solid #111;
+  display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0;
+}
+
+/* ── UNDERCUT PANEL ─────────────────────────────────────────────────────── */
+#undercut-panel{
+  display:flex;align-items:center;gap:0;
+  height:76px;flex-shrink:0;
+  background:#080808;border-top:1px solid #161616;
+  padding:0 14px;font-family:Consolas,monospace;position:relative;
+}
+/* 패널 왼쪽 라벨 */
+#ucp-panel-label{
+  font-size:11px;font-weight:700;letter-spacing:1px;color:#aab4be;
+  writing-mode:vertical-rl;text-orientation:mixed;
+  transform:rotate(180deg);margin-right:12px;flex-shrink:0;
+  text-transform:uppercase;
+}
+/* 빈 상태 */
+#ucp-empty{
+  color:#2a2a2a;font-size:11px;letter-spacing:.3px;
+  display:flex;align-items:center;gap:8px;
+}
+#ucp-data{ display:none;align-items:center;gap:0;flex:1; }
+/* 드라이버 */
+#ucp-drv-color{ width:3px;height:46px;border-radius:2px;flex-shrink:0;margin-right:10px; }
+#ucp-drv-name{ font-size:13px;font-weight:900;letter-spacing:.4px; }
+#ucp-drv-team{ font-size:12px;color:#aab4be;margin-top:2px; }
+/* 확률 미터 (크게) */
+#ucp-prob-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  margin:0 16px;flex-shrink:0;
+}
+#ucp-prob-val{ font-size:30px;font-weight:900;line-height:1;font-family:Consolas;letter-spacing:-1px; }
+#ucp-prob-bar-bg{ width:60px;height:4px;background:#161616;border-radius:2px;margin-top:5px; }
+#ucp-prob-bar{ height:4px;border-radius:2px;width:0%;transition:width .4s,background .4s; }
+#ucp-prob-lbl{ font-size:11px;color:#e6edf3;margin-top:3px;letter-spacing:.6px;text-transform:uppercase; }
+/* 구분선 */
+.ucp-sep{ width:1px;height:40px;background:#161616;margin:0 12px;flex-shrink:0; }
+/* 데이터 블록 */
+.ucp-block{ display:flex;flex-direction:column;align-items:center;min-width:52px; }
+.ucp-lbl{ font-size:11px;color:#e6edf3;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px; }
+.ucp-val{ font-size:14px;font-weight:900;color:#e6edf3;line-height:1;font-family:Consolas; }
+.ucp-sub{ font-size:12px;color:#aab4be;margin-top:3px; }
+/* Layer2 태그 */
+#ucp-algo-tag{
+  position:absolute;top:5px;right:10px;
+  font-size:7px;color:#222;font-family:Consolas;letter-spacing:.4px;
+}
+button.ctrl-btn{
+  background:#161616;border:1px solid #222;color:#e6edf3;
+  padding:3px 10px;border-radius:4px;cursor:pointer;
+  font-weight:700;font-size:10px;transition:background .12s;flex-shrink:0;
+}
+button.ctrl-btn:hover{background:#222}
+button.ctrl-btn.cam-active{background:#1a2a3a;border-color:#2a4060;color:#7ab3e0}
+input[type=range]{accent-color:#e10600;cursor:pointer}
+.clbl{font-size:12px;color:#e6edf3;text-transform:uppercase;letter-spacing:.5px}
+.cval{font-size:10px;color:#e6edf3;font-family:Consolas;min-width:32px}
+#tdisplay{font-size:15px;color:#e6edf3;font-family:Consolas;min-width:52px}
+
+/* ── LOADING ────────────────────────────────────────────────────────────── */
+#loading{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:9999}
+#loading h2{font-size:12px;font-weight:900;letter-spacing:2px;color:#e10600}
+.spinner{width:32px;height:32px;border:2px solid #1a1a1a;border-top-color:#e10600;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#lmsg{font-size:11px;color:#555}
+#lbar-wrap{width:160px;height:2px;background:#1a1a1a;border-radius:1px}
+#lbar{height:100%;background:#e10600;border-radius:1px;width:0%;transition:width .2s}
+
+/* ── POD OVERLAY ────────────────────────────────────────────────────────── */
+#pod-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.88);
+  display:none;flex-direction:column;
+}
+#pod-header{
+  height:44px;background:#0d0d0d;border-bottom:1px solid #222;
+  display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;
+}
+#pod-driver-badge{font-size:13px;font-weight:900;color:#e10600;letter-spacing:1px}
+#pod-cam-btns{display:flex;gap:6px;margin-left:auto}
+#btn-close-pod{
+  background:transparent;border:1px solid #333;color:#8b949e;
+  padding:3px 10px;border-radius:4px;cursor:pointer;
+  font-weight:700;font-size:11px;margin-left:10px;transition:background .12s;
+}
+#btn-close-pod:hover{background:#1a1a1a;color:#fff}
+#canvas-wrap{flex:1;min-height:0;position:relative;background:#06101c}
+#canvas-wrap canvas{display:block;width:100%!important;height:100%!important}
+#cam-badge{
+  position:absolute;top:10px;right:10px;
+  background:rgba(0,0,0,.8);border:1px solid #222;border-radius:4px;
+  padding:3px 10px;font-size:10px;color:#8b949e;pointer-events:none;
+}
+#lap-badge{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  background:rgba(225,6,0,.92);color:#fff;font-weight:800;
+  font-size:12px;font-family:Consolas;padding:4px 16px;border-radius:5px;display:none;
+}
+#pod-follow-info{
+  position:absolute;top:10px;left:10px;
+  background:rgba(0,0,0,.75);border-radius:4px;padding:4px 10px;
+  font-size:10px;color:#8b949e;pointer-events:none;
+}
+
+/* ── Tyre colours ───────────────────────────────────────────────────────── */
+.tyre-S{background:#FF5252;color:#fff}
+.tyre-M{background:#FFC107;color:#1a1a1a}
+.tyre-H{background:#ECEFF1;color:#1a1a1a}
+
+/* ── MAP DRIVER DOT TOOLTIP ─────────────────────────────────────────────── */
+#map-tooltip{
+  position:absolute;background:#0d0d0d;border:1px solid #333;
+  border-radius:4px;padding:4px 8px;font-size:10px;font-family:Consolas;
+  pointer-events:none;display:none;z-index:10;white-space:nowrap;
+}
+
+/* ── LAYER 1: DRS BADGE ─────────────────────────────────────────────────── */
+.drs-badge{
+  font-size:7px;font-weight:800;letter-spacing:.4px;
+  background:rgba(34,197,94,.18);color:#22c55e;
+  border:1px solid rgba(34,197,94,.5);
+  padding:1px 4px;border-radius:2px;flex-shrink:0;
+}
+
+/* ── LAYER 2: STRATEGY ALERT ────────────────────────────────────────────── */
+#strategy-alert{
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,193,7,.12);border:1px solid #FFC107;
+  border-radius:5px;padding:6px 18px;
+  font-size:10px;font-family:Consolas;font-weight:800;
+  color:#FFC107;letter-spacing:.4px;
+  z-index:10;display:none;white-space:nowrap;
+  animation:stratPulse 1.4s ease-in-out infinite;
+}
+@keyframes stratPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.35)}
+  50%{box-shadow:0 0 0 6px rgba(255,193,7,0)}
+}
+
+/* ── LAYER 2: UNDERCUT BADGE (tower) ───────────────────────────────────── */
+.pit-badge{
+  font-size:7px;font-weight:800;letter-spacing:.3px;
+  background:rgba(255,193,7,.18);color:#FFC107;
+  border:1px solid rgba(255,193,7,.6);
+  padding:1px 4px;border-radius:2px;flex-shrink:0;
+  animation:pitPulse 1.2s ease-in-out infinite;
+}
+@keyframes pitPulse{
+  0%,100%{opacity:1} 50%{opacity:.5}
+}
+/* ── REAL GP ANALYSIS PANEL ────────────────────────────────────────────── */
+#gp-analysis{
+  background:#080808;border-top:1px solid #161616;
+  padding:10px 14px;font-family:Consolas,monospace;
+  flex-shrink:0;overflow:hidden;
+}
+#gp-analysis-header{
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  font-size:9px;font-weight:700;letter-spacing:1px;color:#333;
+  text-transform:uppercase;margin-bottom:0;
+  user-select:none;
+}
+#gp-analysis-header:hover{ color:#555; }
+#gp-analysis-header .gp-toggle{ margin-left:auto;color:#333;font-size:10px; }
+#gp-analysis-body{
+  display:none;margin-top:10px;
+}
+.gp-table{
+  width:100%;border-collapse:collapse;font-size:9px;
+}
+.gp-table th{
+  color:#333;font-weight:700;letter-spacing:.5px;
+  border-bottom:1px solid #161616;padding:3px 6px;text-align:left;
+}
+.gp-table td{
+  color:#8b949e;padding:4px 6px;border-bottom:1px solid #0f0f0f;
+}
+.gp-table tr:hover td{ background:#0d0d0d; }
+.gp-hit  td:last-child{ color:#22c55e;font-weight:900; }
+.gp-miss td:last-child{ color:#ef4444;font-weight:900; }
+.gp-note{ font-size:8px;color:#333;margin-top:8px;line-height:1.6; }
+.gp-highlight{ color:#ffd700;font-weight:900; }
+
+/* ── LAYER 3: TOP BATTLES ───────────────────────────────────────────────── */
+#battles-panel{
+  position:absolute;top:10px;right:10px;
+  background:rgba(13,13,13,.93);
+  border:1px solid #1c1c1c;border-radius:6px;
+  padding:8px 10px;min-width:170px;
+  z-index:10;font-family:Consolas,monospace;
+}
+#battles-title{
+  font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;
+  border-bottom:1px solid #1c1c1c;padding-bottom:5px;margin-bottom:6px;
+  display:flex;align-items:center;gap:5px;
+}
+.battle-row{
+  display:flex;align-items:center;gap:5px;
+  font-size:10px;padding:2px 0;
+}
+.battle-rank{color:#333;font-size:9px;min-width:10px;}
+.battle-gap{margin-left:auto;color:#444;font-size:9px;}
+
+/* ── LAYER 1: DRS BADGE HOT (배틀 중 DRS 가용 강조) ───────────────────── */
+.drs-badge-hot{
+  animation:drsPulse .7s ease-in-out infinite;
+  border-color:rgba(34,197,94,.9)!important;
+  background:rgba(34,197,94,.35)!important;
+  color:#fff!important;
+}
+@keyframes drsPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}
+  50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}
+}
+/* ── [DP] AI ETA 패널 ──────────────────────────────────────────────────── */
+#dp-eta-panel{
+  border-top:1px solid #1c1c1c;padding:6px 8px;
+  font-family:Consolas,monospace;background:#080808;
+}
+#dp-eta-title{
+  font-size:7px;color:#333;text-transform:uppercase;letter-spacing:.8px;
+  display:flex;align-items:center;gap:4px;margin-bottom:5px;
+}
+.dp-row{display:flex;align-items:center;gap:5px;padding:2px 0;font-size:9px;}
+.dp-eta-val{margin-left:auto;color:#3b82f6;font-size:10px;font-weight:700;letter-spacing:.3px;}
+
+/* ── [B&B] 분기한정 팝업 ─────────────────────────────────────────────── */
+#bb-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#0d0d0d;border:1px solid #1c1c1c;border-radius:6px;
+  padding:14px 16px;z-index:200;font-family:Consolas,monospace;
+  min-width:290px;max-width:360px;display:none;
+  box-shadow:0 0 24px rgba(0,0,0,.8);
+}
+#bb-popup-header{
+  font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;
+  border-bottom:1px solid #1c1c1c;padding-bottom:6px;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+#bb-popup-close{
+  margin-left:auto;background:none;border:none;color:#333;
+  font-size:12px;cursor:pointer;font-family:Consolas;padding:0;line-height:1;
+}
+#bb-popup-close:hover{color:#8b949e;}
+.bb-section-label{
+  font-size:7px;color:#444;text-transform:uppercase;letter-spacing:.6px;margin:6px 0 3px;
+}
+.bb-seq-row{display:flex;align-items:center;gap:4px;font-size:9px;padding:1px 0;flex-wrap:wrap;}
+.bb-stop-tag{
+  font-size:7px;padding:1px 4px;border-radius:2px;font-weight:700;
+  background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.4);
+}
+.bb-time-row{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:10px;margin-top:6px;padding-top:6px;border-top:1px solid #1a1a1a;
+}
+
+/* ── LAYER 3: BATTLE TRIGGERED BANNER ─────────────────────────────────── */
+#battle-trigger-banner{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  background:rgba(255,62,62,.14);border:1px solid rgba(255,62,62,.8);
+  border-radius:5px;padding:5px 18px;
+  font-size:10px;font-family:Consolas;font-weight:800;
+  color:#ff3e3e;letter-spacing:.5px;
+  z-index:20;display:none;white-space:nowrap;pointer-events:none;
+  animation:battlePulse .8s ease-in-out infinite;
+}
+@keyframes battlePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,62,62,.4);opacity:1}
+  50%{box-shadow:0 0 0 8px rgba(255,62,62,0);opacity:.85}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <h2>F1 LIVE TIMING</h2>
+  <div class="spinner"></div>
+  <div id="lmsg">텔레메트리 로드 중…</div>
+  <div id="lbar-wrap"><div id="lbar"></div></div>
+</div>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <span class="race-tag" data-i18n="ui-race">RACE</span>
+  <span id="tb-event">F1 2021 FRENCH GRAND PRIX</span>
+  <span id="tb-circuit">Circuit Paul Ricard</span>
+  <button id="btn-lang" onclick="toggleLang()" title="언어 변경 / Change language">한국어</button>
+  <div id="tb-sep"></div>
+  <span id="tb-lap">LAP —/53</span>
+  <span id="tb-time">0:00</span>
+  <button id="btn-pod" data-i18n="ui-tvpod" onclick="togglePod()">📺 TV POD</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- LEFT COLUMN: 2D MAP + TELEMETRY -->
+  <div id="left-col">
+    <!-- 2D TRACK MAP -->
+    <div id="map-area">
+      <canvas id="track-map"></canvas>
+      <div id="map-tooltip"></div>
+      <!-- Layer 3: Top Battles (Divide & Conquer) -->
+      <div id="battles-panel">
+        <div id="battles-title"><span data-i18n="ui-battles">⚔ TOP BATTLES</span> <span style="color:#333;font-size:7px;margin-left:auto">D&amp;C O(n log n)</span></div>
+        <div id="battles-list"><div style="color:#333;font-size:9px">로딩 중...</div></div>
+      </div>
+      <!-- Layer 3: Battle Triggered Banner (gap < 0.5s) -->
+      <div id="battle-trigger-banner"></div>
+    </div>
+  </div><!-- /left-col -->
+  <!-- TIMING TOWER -->
+  <div id="right-panel">
+    <div id="tower-header">
+      <span style="width:20px" data-i18n="ui-th-pos">P</span>
+      <span style="width:3px"></span>
+      <span style="flex:1" data-i18n="ui-th-driver">DRIVER</span>
+      <span data-i18n="ui-th-gap">GAP</span>
+      <span style="width:14px;text-align:center" data-i18n="ui-th-tyre">T</span>
+    </div>
+    <div id="tower-rows"></div>
+    <!-- [동적 계획법] AI 예상 완주 시간 패널 -->
+    <div id="dp-eta-panel">
+      <div id="dp-eta-title">
+        <span style="color:#3b82f6">▶</span>
+        <span data-i18n="ui-dp-eta">AI ETA</span>
+        <span style="color:#1c1c1c;font-size:7px;margin-left:auto">DP O(C×A×R)</span>
+      </div>
+      <div id="dp-eta-rows"><div style="color:#333;font-size:9px">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS BAR -->
+<div id="controls">
+  <button class="ctrl-btn" id="btn-play" data-i18n="ui-pause">⏸ PAUSE</button>
+  <div style="display:flex;align-items:center;gap:4px">
+    <button class="ctrl-btn spd-btn cam-active" id="spd-1" onclick="setSpeed(1)">×1</button>
+    <button class="ctrl-btn spd-btn" id="spd-2" onclick="setSpeed(2)">×2</button>
+    <button class="ctrl-btn spd-btn" id="spd-5" onclick="setSpeed(5)">×5</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:1px">
+    <div class="clbl" data-i18n="ui-seek">SEEK</div>
+    <div style="display:flex;align-items:center;gap:4px">
+      <input type="range" id="seek" min="0" max="100" step="1" value="0" style="width:130px">
+      <span id="tdisplay">0:00</span>
+    </div>
+  </div>
+  <div style="flex:1"></div>
+  <span style="font-size:9px;color:#333;font-family:Consolas" data-i18n="ui-circuit-info">Circuit Paul Ricard · Real Telemetry</span>
+</div>
+
+<!-- TELEMETRY BAR — 드라이버 선택 시 표시 (언더컷 패널 위) -->
+<div id="telem-bar">
+  <span id="telem-empty" data-i18n="telem-empty" style="color:#aab4be;font-size:17px">타이밍 타워에서 드라이버를 클릭하면 텔레메트리가 표시됩니다</span>
+  <div id="telem-drv" style="display:none">
+    <div id="telem-color"></div>
+    <div>
+      <div id="telem-name">---</div>
+      <div id="telem-team"></div>
+    </div>
+  </div>
+  <div id="telem-stats" style="display:none">
+    <div class="ts-box">
+      <div class="ts-lbl" data-i18n="ui-spd">SPD</div>
+      <div class="ts-val" id="ts-speed" style="color:#22c55e">0</div>
+      <div class="ts-unit" data-i18n="ui-kmh">KM/H</div>
+    </div>
+    <div class="ts-box">
+      <div class="ts-lbl" data-i18n="ui-gear">GEAR</div>
+      <div class="ts-val" id="ts-gear" style="color:#3b82f6">1</div>
+      <div class="ts-unit" id="ts-drs" style="color:#555">DRS —</div>
+    </div>
+  </div>
+  <div id="telem-bars" style="display:none">
+    <div class="tb-row">
+      <span class="tb-lbl" data-i18n="ui-thr">THR</span>
+      <div class="tb-bg"><div class="tb-fill" id="bar-thr" style="background:#22c55e;width:0%"></div></div>
+      <span class="tb-val" id="val-thr">0%</span>
+    </div>
+    <div class="tb-row">
+      <span class="tb-lbl" data-i18n="ui-brk">BRK</span>
+      <div class="tb-bg"><div class="tb-fill" id="bar-brk" style="background:#ef4444;width:0%"></div></div>
+      <span class="tb-val" id="val-brk">OFF</span>
+    </div>
+  </div>
+  <div id="telem-extra" style="display:none">
+    <div class="te-box">
+      <span style="font-size:8px;color:#aab4be;text-transform:uppercase" data-i18n="ui-pos">POS</span>
+      <span class="te-v" id="te-pos" style="color:#ffd700">—</span>
+    </div>
+    <div class="te-box">
+      <span style="font-size:8px;color:#aab4be;text-transform:uppercase" data-i18n="ui-tel-lap">LAP</span>
+      <span class="te-v" id="te-lap">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- PIT STRATEGY PANEL — 컨트롤 바 하단 (항상 표시) -->
+<div id="undercut-panel">
+  <div id="ucp-panel-label" data-i18n="ui-undercut">PIT STRATEGY</div>
+  <div id="ucp-algo-tag">Layer 5 · B&amp;B Pruning</div>
+
+  <!-- 대기 상태: VER 피트인 이전 -->
+  <div id="ucp-empty">
+    <span style="font-size:14px;opacity:.25">⏳</span>
+    <span data-i18n="ucp-empty-line1">VER 피트인 시점 대기 중</span><br>
+    <span data-i18n="ucp-empty-line2" style="color:#333">Lap 18 피트 완료 시 B&amp;B 최적 전략이 자동으로 표시됩니다</span>
+  </div>
+
+  <!-- 데이터 표시 영역 (드라이버 선택 후) -->
+  <div id="ucp-data">
+    <!-- 드라이버 정보 -->
+    <div id="ucp-drv-color"></div>
+    <div style="margin-right:4px;min-width:52px">
+      <div id="ucp-drv-name">—</div>
+      <div id="ucp-drv-team"></div>
+    </div>
+    <div class="ucp-sep"></div>
+    <!-- B&B 최적 잔여 시간 -->
+    <div id="ucp-prob-wrap">
+      <div id="ucp-prob-val" style="color:#3b82f6;font-size:26px">—</div>
+      <div id="ucp-prob-bar-bg" style="display:none"><div id="ucp-prob-bar"></div></div>
+      <div id="ucp-prob-lbl" data-i18n="bb-lbl-optimal">B&B OPTIMAL</div>
+    </div>
+    <div class="ucp-sep"></div>
+    <!-- 최적 시퀀스 -->
+    <div class="ucp-block" style="min-width:100px">
+      <div class="ucp-lbl" id="ucp-lbl-seq" data-i18n="bb-lbl-seq">OPTIMAL SEQ</div>
+      <div class="ucp-val" id="ucp-gap" style="font-size:11px;color:#ffd700;letter-spacing:.5px">—</div>
+      <div class="ucp-sub" id="ucp-front-name">from L—</div>
+    </div>
+    <!-- 기존 블록 숨김 유지 (updateUndercutPanel 호환) -->
+    <div style="display:none">
+      <div id="ucp-pitloss"></div><div id="ucp-warmup"></div>
+      <div id="ucp-net"></div><div id="ucp-optlap"></div>
+      <div id="ucp-comp"></div><div id="ucp-age-sub"></div>
+      <div id="ucp-pace"></div><div id="ucp-pace-sub"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 2021 FRENCH GP REAL RESULT ANALYSIS -->
+<div id="gp-analysis">
+  <div id="gp-analysis-header" onclick="toggleGpAnalysis()">
+    <span style="color:#ffd700">◆</span>
+    <span data-i18n="gp-title">2021 프랑스 GP 실제 결과 비교 분석</span>
+    <span data-i18n="gp-subtitle" style="color:#444;font-size:7px;margin-left:6px">Decrease &amp; Conquer 모델 vs 실제 전략</span>
+    <span class="gp-toggle" id="gp-toggle-icon" data-i18n="gp-expand">▶ 펼치기</span>
+  </div>
+  <div id="gp-analysis-body">
+    <table class="gp-table">
+      <thead>
+        <tr>
+          <th data-i18n="th-driver">드라이버</th>
+          <th data-i18n="th-actual-pit">실제 피트</th>
+          <th data-i18n="th-model-pred">모델 예측</th>
+          <th data-i18n="th-gap">갭 상황</th>
+          <th data-i18n="th-result">결과</th>
+          <th data-i18n="th-verdict">판정</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="gp-hit">
+          <td><span style="color:#e8002d">VER</span> <span style="font-size:7px;color:#ffd700">P1</span></td>
+          <td>L18(M→H)<br>L32(H→M)</td>
+          <td>L17–19 ✓<br>L30–33 ✓</td>
+          <td data-i18n="ver-gap">BOT 0.3s 앞</td>
+          <td data-i18n="ver-result">2스톱 전략으로 HAM 물리치고 우승<br>L33~ 신선한 M으로 최종 역전</td>
+          <td data-i18n="ver-verdict">✓ 적중</td>
+        </tr>
+        <tr class="gp-miss">
+          <td><span class="gp-highlight">HAM</span> <span style="font-size:7px;color:#8b949e">P2</span></td>
+          <td>L19(M→H)</td>
+          <td>L17–20 ✓</td>
+          <td data-i18n="ham-gap">VER 1.2s 뒤</td>
+          <td data-i18n="ham-result">1스톱 H 34랩 → VER의 신선 M에 밀려 2위<br>모델은 2스톱 필요성 미반영</td>
+          <td data-i18n="ham-verdict">△ 1스톱 한계</td>
+        </tr>
+        <tr class="gp-hit">
+          <td><span style="color:#ff8000">PER</span> <span style="font-size:7px;color:#8b949e">P3</span></td>
+          <td>L24(M→H)</td>
+          <td>L22–26 ✓</td>
+          <td data-i18n="per-gap">NOR 2.1s 앞</td>
+          <td data-i18n="per-result">1스톱 H로 P3 완주</td>
+          <td data-i18n="per-verdict">✓ 적중</td>
+        </tr>
+        <tr class="gp-hit">
+          <td><span style="color:#0082fa">BOT</span> <span style="font-size:7px;color:#8b949e">P4</span></td>
+          <td>L17(M→H)</td>
+          <td>L16–19 ✓</td>
+          <td data-i18n="bot-gap">VER 에 언더컷 당함</td>
+          <td data-i18n="bot-result">최적 창 내 피트인, VER에게 1초 차 역전</td>
+          <td data-i18n="bot-verdict">✓ 적중</td>
+        </tr>
+        <tr class="gp-miss">
+          <td><span style="color:#dc0000">LEC</span> <span style="font-size:7px;color:#8b949e">P16</span></td>
+          <td>L14(M→H)<br>L38(H→M)</td>
+          <td>L17–20</td>
+          <td data-i18n="lec-gap">BOT 뒤 1.5s</td>
+          <td data-i18n="lec-result">L14 조기 피트 → 트래픽 손실, 결국 P16</td>
+          <td data-i18n="lec-verdict">✗ 3랩 이른 피트</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="gp-note" id="gp-note">
+      <span class="gp-highlight">핵심 요약 (Circuit Paul Ricard · 53랩 · 실제 텔레메트리 기반)</span><br>
+      · <b style="color:#e8002d">VER 우승 (2스톱)</b>: L18 M→H (BOT 언더컷), L32 H→M (신선 미디엄 21랩 주행) → 최종 역전<br>
+      · <b>HAM 2위 (1스톱)</b>: L19 M→H, 34랩 하드 완주. VER의 신선 미디엄 페이스를 끝내 따라잡지 못함<br>
+      · <b>LEC 탈락권 (P16)</b>: L14 조기 피트가 결정적 패착 — 모델 예측보다 3랩 이름<br>
+      · <b>모델 적중률: 4/5 (80%)</b> — VER·PER·BOT·HAM 1차 피트 모두 예측 창 내 적중<br>
+      · <b>모델 한계</b>: 현재 1스톱 기준 f(lap) 단봉 탐색 → VER의 2스톱 최적성 판단 불가<br>
+      · 이진 탐색: f(lap)=단봉함수, marginalGain 부호 전환점을 O(log L)로 탐색
+    </div>
+  </div>
+</div>
+
+<!-- TV POD OVERLAY -->
+<div id="pod-overlay">
+  <div id="pod-header">
+    <span id="pod-driver-badge">TV POD</span>
+    <div id="pod-cam-btns">
+      <button class="ctrl-btn" id="btn-orbit" data-i18n="ui-orbit">🌐 ORBIT</button>
+      <button class="ctrl-btn" id="btn-follow" data-i18n="ui-follow-btn">📷 FOLLOW</button>
+      <button class="ctrl-btn" id="btn-top" data-i18n="ui-topview">🗺 TOP</button>
+      <button class="ctrl-btn cam-active" id="btn-tv" data-i18n="ui-tvpod">📺 TV POD</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <div style="display:flex;flex-direction:column;gap:0px">
+        <div class="clbl" data-i18n="ui-follow-lbl">FOLLOW</div>
+        <select id="pod-driver-sel" style="background:#161616;border:1px solid #222;color:#e6edf3;font-size:10px;border-radius:3px;padding:1px 4px;cursor:pointer"></select>
+      </div>
+      <button id="btn-close-pod" data-i18n="ui-close" onclick="togglePod()">✕ CLOSE</button>
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="cam-badge">ORBIT</div>
+    <div id="lap-badge">GRID</div>
+    <div id="pod-follow-info"></div>
+    <!-- 속도 비네팅 오버레이 -->
+    <canvas id="speed-vignette" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════════════════════════════════
+let D, A, scene, camera, renderer, orbit;
+let trackCurve;
+let trackProfile = [];
+const carMeshes = {}, carPos = {}, carHead = {}, carPrevPos = {};
+const carBasePrev = {}, carLineOffset = {};
+const carSepOffset = {};
+const carTrackIdx = {};
+const telIdx = {};
+let simTime = 0, playing = true, speedMult = 1;
+let camMode = 'tv', followTarget = null, selectedDriver = null;
+let SCALE, CX, CZ, HALF_W;
+const clock = new THREE.Clock();
+const _q = new THREE.Quaternion(), _up = new THREE.Vector3(0,1,0);
+let _camPos = new THREE.Vector3(), _camTgt = new THREE.Vector3();
+const carPrevFwd = {};
+const carSteer = {};
+let _lastTower = 0;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIMULATION CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+const TOTAL_LAPS = 53;
+const SIM_HZ     = 120;
+const SIM_DT     = 1 / SIM_HZ;
+let   _simAccum  = 0;
+
+let _drsAvailable  = new Set();
+let _lastBattles   = 0;
+let _closestPair   = null;        // {a, b} — for 2D highlight
+let _cachedBattles = [];              // [{a,b,gap}] from D&C
+const _lastTowerPos = new Map();
+const _towerPosFlash = new Map();
+const _towerPosCooldown = new Map();
+let _lastTowerSimTime = null;
+
+function algorithmFrameAt(time) {
+  if (!A?.frames) return null;
+  return A.frames[String(Math.round(time))] || null;
+}
+
+
+// 2D map globals
+let _map2D = null;  // {minX, maxX, minY, maxY, scX, scY, offX, offY}
+let _mapW = 0, _mapH = 0;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+function lmsg(m){ document.getElementById('lmsg').textContent = m; }
+function lbar(p){ document.getElementById('lbar').style.width = p+'%'; }
+function clamp(v, mn, mx){ return Math.max(mn, Math.min(mx, v)); }
+function fmtT(s){ if(!s||s<=0)return'—'; return `${Math.floor(s/60)}:${(s%60).toFixed(3).padStart(6,'0')}`; }
+function sectorFromProgress(t){ return Math.min(3, Math.max(1, Math.floor(clamp(t, 0, 0.999999) * 3) + 1)); }
+function sectorStartProgress(sector){ return (clamp(sector, 1, 3) - 1) / 3; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// I18N CORE — must be before BOOT so t() is available during loading
+// ═══════════════════════════════════════════════════════════════════════════
+let _lang = 'ko';
+const STRINGS = {
+  ko: {
+    'telem-empty':      '타이밍 타워에서 드라이버를 클릭하면 텔레메트리가 표시됩니다',
+    'ucp-empty-line1':  '타이밍 타워에서 드라이버를 선택하면',
+    'ucp-empty-line2':  '현재 랩 기준 피트스탑 성공 확률을 실시간으로 표시합니다',
+    'gp-title':         '2021 프랑스 GP 실제 결과 비교 분석',
+    'gp-subtitle':      'Decrease &amp; Conquer 모델 vs 실제 전략',
+    'gp-expand':        '▶ 펼치기',
+    'gp-collapse':      '▼ 접기',
+    'th-driver':        '드라이버',
+    'th-actual-pit':    '실제 피트',
+    'th-model-pred':    '모델 예측',
+    'th-gap':           '갭 상황',
+    'th-result':        '결과',
+    'th-verdict':       '판정',
+    'ver-gap':          'BOT 0.3s 앞',
+    'ver-result':       '2스톱 전략으로 HAM 물리치고 우승<br>L33~ 신선한 M으로 최종 역전',
+    'ver-verdict':      '✓ 적중',
+    'ham-gap':          'VER 1.2s 뒤',
+    'ham-result':       '1스톱 H 34랩 → VER의 신선 M에 밀려 2위<br>모델은 2스톱 필요성 미반영',
+    'ham-verdict':      '△ 1스톱 한계',
+    'per-gap':          'NOR 2.1s 앞',
+    'per-result':       '1스톱 H로 P3 완주',
+    'per-verdict':      '✓ 적중',
+    'bot-gap':          'VER 에 언더컷 당함',
+    'bot-result':       '최적 창 내 피트인, VER에게 1초 차 역전',
+    'bot-verdict':      '✓ 적중',
+    'lec-gap':          'BOT 뒤 1.5s',
+    'lec-result':       'L14 조기 피트 → 트래픽 손실, 결국 P16',
+    'lec-verdict':      '✗ 3랩 이른 피트',
+    'gp-note':          '<span class="gp-highlight">핵심 요약 (Circuit Paul Ricard · 53랩 · 실제 텔레메트리 기반)</span><br>· <b style="color:#e8002d">VER 우승 (2스톱)</b>: L18 M→H (BOT 언더컷), L32 H→M (신선 미디엄 21랩 주행) → 최종 역전<br>· <b>HAM 2위 (1스톱)</b>: L19 M→H, 34랩 하드 완주. VER의 신선 미디엄 페이스를 끝내 따라잡지 못함<br>· <b>LEC 탈락권 (P16)</b>: L14 조기 피트가 결정적 패착 — 모델 예측보다 3랩 이름<br>· <b>모델 적중률: 4/5 (80%)</b> — VER·PER·BOT·HAM 1차 피트 모두 예측 창 내 적중<br>· <b>모델 한계</b>: 현재 1스톱 기준 f(lap) 단봉 탐색 → VER의 2스톱 최적성 판단 불가<br>· 이진 탐색: f(lap)=단봉함수, marginalGain 부호 전환점을 O(log L)로 탐색',
+    'load-fail':        '로드 실패: ',
+    'load-telemetry':   'telemetry_full.json 로드 중…',
+    'load-parse':       '파싱 중…',
+    'load-scene':       '씬 초기화…',
+    'load-assets':      'F1 에셋 로드 중…',
+    // UI 라벨 (한글 모드)
+    'ui-race':          '레이스',
+    'ui-battles':       '⚔ 주요 배틀',
+    'ui-th-pos':        'P',
+    'ui-th-driver':     '드라이버',
+    'ui-th-gap':        '갭',
+    'ui-th-tyre':       '타',
+    'ui-spd':           '속도',
+    'ui-kmh':           'KM/H',
+    'ui-gear':          '기어',
+    'ui-thr':           '가속',
+    'ui-brk':           '제동',
+    'ui-pos':           '순위',
+    'ui-tel-lap':       '랩',
+    'ui-pause':         '⏸ 일시정지',
+    'ui-play':          '▶ 재생',
+    'ui-seek':          '탐색',
+    'ui-circuit-info':  'Circuit Paul Ricard · 실제 텔레메트리',
+    'ui-undercut':      '최적 피트 전략',
+    'ui-pit-prob':      '피트 성공 확률',
+    'ui-gap-front':     '앞차 갭',
+    'ui-tyre':          '타이어',
+    'ui-pace-gain':     '랩당 페이스 이득',
+    'ui-pit-warmup':    '피트 + 웜업',
+    'ui-net-gain':      '순이득',
+    'ui-slap':          '초/랩',
+    'ui-orbit':         '🌐 궤도뷰',
+    'ui-follow-btn':    '📷 추적',
+    'ui-topview':       '🗺 탑뷰',
+    'ui-tvpod':         '📺 TV POD',
+    'ui-follow-lbl':    '추적 대상',
+    'ui-close':         '✕ 닫기',
+    'js-drs-on':        'DRS ▲',
+    'js-drs-off':       'DRS —',
+    'js-brake-on':      '제동',
+    'js-brake-off':     '—',
+    'js-pit':           '피트',
+    'js-in-lap':        '피트 중',
+    'js-leader':        '선두',
+    'js-pit-lane':      '피트 레인',
+    'js-exec':          '실행 중',
+    'js-warmup-blank':  '웜업 —초',
+    'js-opt-lap-blank': '최적 랩 —',
+    'js-laps':          '랩',
+    'ui-dp-eta':        'AI 예상 완주',
+    'ui-bb-title':      '⚡ 분기한정 최적 전략',
+    'ui-bb-opt':        '최적 시퀀스 (B&B)',
+    'ui-bb-hist':       '실제 전략 (역사)',
+    'battles-loading':  '배틀 탐색 중...',
+    'ucp-empty-line1':  '피트인 시점 대기 중',
+    'ucp-empty-line2':  '드라이버 피트 완료 시 B&B 최적 전략이 자동 표시됩니다',
+    'bb-lbl-optimal':   'B&B 최적',
+    'bb-lbl-seq':       '최적 시퀀스',
+    'bb-lbl-hist':      '실제 전략',
+    'bb-lbl-verdict':   '판정',
+    'bb-pit-moment':    '피트인 시점',
+    'bb-remaining':     '예상 잔여',
+    'bb-no-stop':       '노 스톱',
+    'bb-match':         '일치',
+    'bb-alt':           '대안',
+    'bb-match-sub':     '실제 전략과 일치',
+    'bb-alt-sub':       '대안 전략 제안',
+    'bb-from-lap':      'L',
+  },
+  en: {
+    'telem-empty':      'Click a driver in the timing tower to view telemetry',
+    'ucp-empty-line1':  'Select a driver in the timing tower to see',
+    'ucp-empty-line2':  'real-time pit stop success probability for the current lap',
+    'gp-title':         '2021 French GP Actual Result Analysis',
+    'gp-subtitle':      'Decrease &amp; Conquer Model vs Actual Strategy',
+    'gp-expand':        '▶ EXPAND',
+    'gp-collapse':      '▼ COLLAPSE',
+    'th-driver':        'DRIVER',
+    'th-actual-pit':    'ACTUAL PIT',
+    'th-model-pred':    'MODEL PRED',
+    'th-gap':           'GAP STATUS',
+    'th-result':        'RESULT',
+    'th-verdict':       'VERDICT',
+    'ver-gap':          '0.3s ahead of BOT',
+    'ver-result':       '2-stop strategy beats HAM for victory<br>L33~ fresh Medium sealed the win',
+    'ver-verdict':      '✓ HIT',
+    'ham-gap':          '1.2s behind VER',
+    'ham-result':       '1-stop H 34 laps → unable to match VER\'s fresh M pace, P2<br>Model didn\'t account for 2-stop need',
+    'ham-verdict':      '△ 1-stop limit',
+    'per-gap':          '2.1s ahead of NOR',
+    'per-result':       'Completed P3 on 1-stop Hard',
+    'per-verdict':      '✓ HIT',
+    'bot-gap':          'Undercut by VER',
+    'bot-result':       'Pitted in optimal window, reversed 1s gap to VER',
+    'bot-verdict':      '✓ HIT',
+    'lec-gap':          '1.5s behind BOT',
+    'lec-result':       'L14 early pit → traffic loss, finished P16',
+    'lec-verdict':      '✗ 3 laps early',
+    'gp-note':          '<span class="gp-highlight">Key Summary (Circuit Paul Ricard · 53 Laps · Real Telemetry)</span><br>· <b style="color:#e8002d">VER WIN (2-stop)</b>: L18 M→H (undercut BOT), L32 H→M (fresh Medium 21 laps) → final overtake<br>· <b>HAM P2 (1-stop)</b>: L19 M→H, 34-lap Hard stint. Could not match VER\'s fresh Medium pace<br>· <b>LEC P16</b>: L14 early pit was decisive mistake — 3 laps ahead of model prediction<br>· <b>Model accuracy: 4/5 (80%)</b> — VER·PER·BOT·HAM 1st pit all within predicted window<br>· <b>Model limit</b>: 1-stop f(lap) unimodal search → cannot assess VER\'s 2-stop optimality<br>· Binary search: f(lap)=unimodal, O(log L) marginalGain sign flip',
+    'load-fail':        'Load failed: ',
+    'load-telemetry':   'Loading telemetry_full.json…',
+    'load-parse':       'Parsing…',
+    'load-scene':       'Initializing scene…',
+    'load-assets':      'Loading F1 assets…',
+    // UI labels (English mode)
+    'ui-race':          'RACE',
+    'ui-battles':       '⚔ TOP BATTLES',
+    'ui-th-pos':        'P',
+    'ui-th-driver':     'DRIVER',
+    'ui-th-gap':        'GAP',
+    'ui-th-tyre':       'T',
+    'ui-spd':           'SPD',
+    'ui-kmh':           'KM/H',
+    'ui-gear':          'GEAR',
+    'ui-thr':           'THR',
+    'ui-brk':           'BRK',
+    'ui-pos':           'POS',
+    'ui-tel-lap':       'LAP',
+    'ui-pause':         '⏸ PAUSE',
+    'ui-play':          '▶ PLAY',
+    'ui-seek':          'SEEK',
+    'ui-circuit-info':  'Circuit Paul Ricard · Real Telemetry',
+    'ui-undercut':      'PIT STRATEGY',
+    'ui-pit-prob':      'PIT NOW PROB',
+    'ui-gap-front':     'GAP TO FRONT',
+    'ui-tyre':          'TYRE',
+    'ui-pace-gain':     'PACE GAIN / LAP',
+    'ui-pit-warmup':    'PIT + WARMUP',
+    'ui-net-gain':      'NET GAIN',
+    'ui-slap':          's/LAP',
+    'ui-orbit':         '🌐 ORBIT',
+    'ui-follow-btn':    '📷 FOLLOW',
+    'ui-topview':       '🗺 TOP',
+    'ui-tvpod':         '📺 TV POD',
+    'ui-follow-lbl':    'FOLLOW',
+    'ui-close':         '✕ CLOSE',
+    'js-drs-on':        'DRS ▲',
+    'js-drs-off':       'DRS —',
+    'js-brake-on':      'ON',
+    'js-brake-off':     '—',
+    'js-pit':           'PIT',
+    'js-in-lap':        'IN LAP',
+    'js-leader':        'LEADER',
+    'js-pit-lane':      'PIT LANE',
+    'js-exec':          'EXEC',
+    'js-warmup-blank':  'WARMUP —s',
+    'js-opt-lap-blank': 'OPT LAP —',
+    'js-laps':          'LAPS',
+    'ui-dp-eta':        'AI ETA',
+    'ui-bb-title':      '⚡ B&B OPTIMAL STRATEGY',
+    'ui-bb-opt':        'B&B OPTIMAL SEQUENCE',
+    'ui-bb-hist':       'ACTUAL STRATEGY (HISTORY)',
+    'battles-loading':  'searching...',
+    'ucp-empty-line1':  'Waiting for pit stop',
+    'ucp-empty-line2':  'B&B optimal strategy displays automatically when pit completes',
+    'bb-lbl-optimal':   'B&B OPTIMAL',
+    'bb-lbl-seq':       'OPTIMAL SEQ',
+    'bb-lbl-hist':      'HISTORICAL',
+    'bb-lbl-verdict':   'VERDICT',
+    'bb-pit-moment':    'pit moment',
+    'bb-remaining':     'projected remaining',
+    'bb-no-stop':       'NO-STOP',
+    'bb-match':         'MATCH',
+    'bb-alt':           'ALT',
+    'bb-match-sub':     'hist optimal',
+    'bb-alt-sub':       'alt strategy',
+    'bb-from-lap':      'L',
+  }
+};
+function t(key) { return (STRINGS[_lang] || STRINGS.ko)[key] ?? key; }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════════════════
+(async () => {
+  try { await loadData(); }
+  catch(e) { lmsg(t('load-fail')+e.message); console.error(e); }
+})();
+
+async function loadData() {
+  lmsg(t('load-telemetry')); lbar(5);
+  const resp = await fetch('./data/telemetry_full.json');
+  const cl = +resp.headers.get('Content-Length');
+  const reader = resp.body.getReader();
+  const chunks = []; let rx = 0;
+  while(true){
+    const {done,value} = await reader.read();
+    if(done) break;
+    chunks.push(value); rx += value.length;
+    if(cl) lbar(5 + 65*(rx/cl));
+  }
+  lmsg(t('load-parse')); lbar(72);
+  D = JSON.parse(await new Blob(chunks).text());
+  const algoResp = await fetch('./data/algorithm_results.json');
+  A = algoResp.ok ? await algoResp.json() : null;
+  lmsg(t('load-scene')); lbar(82);
+  initCoords(); initScene(); buildTrack(); await buildCars(); initGrid(); bindUI();
+  init2DMap();
+  lbar(100);
+  const PRE_RACE  = 8;
+  const raceStart = window._racingLapStart ?? D.sessionStart;
+  simTime = raceStart - PRE_RACE;
+  followTarget = D.drivers[0]?.name;
+  document.getElementById('seek').min   = raceStart - PRE_RACE;
+  document.getElementById('seek').max   = D.sessionEnd;
+  document.getElementById('seek').value = raceStart - PRE_RACE;
+  // populate pod driver selector
+  const sel = document.getElementById('pod-driver-sel');
+  D.drivers.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.name; opt.textContent = d.name;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', e => { followTarget = e.target.value; });
+  // init done — hide pod, show map
+  setTimeout(() => {
+    document.getElementById('loading').style.display='none';
+    document.getElementById('pod-overlay').style.display='none';
+    clock.start();
+    animate();
+  }, 150);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COORDS
+// ═══════════════════════════════════════════════════════════════════════════
+function initCoords() {
+  const xs = D.track.map(p=>p[0]), ys = D.track.map(p=>p[1]);
+  const mnX=Math.min(...xs),mxX=Math.max(...xs);
+  const mnY=Math.min(...ys),mxY=Math.max(...ys);
+  const range = Math.max(mxX-mnX, mxY-mnY);
+  SCALE  = 580 / range;
+  CX     = (mnX+mxX)/2;
+  CZ     = (mnY+mxY)/2;
+  HALF_W = 75 * SCALE;
+}
+function tw(x,y){ return new THREE.Vector3((x-CX)*SCALE, 0, (y-CZ)*SCALE); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2D TRACK MAP
+// ═══════════════════════════════════════════════════════════════════════════
+let _trackOffscreen = null; // 트랙 외곽선 캐시 캔버스 (한 번만 그림)
+
+function init2DMap() {
+  const xs = D.track.map(p=>p[0]);
+  const ys = D.track.map(p=>p[1]);
+  _map2D = {
+    minX: Math.min(...xs), maxX: Math.max(...xs),
+    minY: Math.min(...ys), maxY: Math.max(...ys),
+  };
+  resizeMapCanvas();
+  window.addEventListener('resize', resizeMapCanvas);
+  // map-area 크기 변경 감지 (타워 로드 후 높이 변경 대응)
+  const _mapAreaEl = document.getElementById('map-area');
+  if (_mapAreaEl && window.ResizeObserver) {
+    new ResizeObserver(() => resizeMapCanvas()).observe(_mapAreaEl);
+  }
+}
+
+function resizeMapCanvas() {
+  const canvas = document.getElementById('track-map');
+  const area = document.getElementById('map-area');
+  canvas.width  = area.clientWidth;
+  canvas.height = area.clientHeight;
+  _mapW = canvas.width;
+  _mapH = canvas.height;
+  _trackOffscreen = null; // 사이즈 바뀌면 캐시 무효화 → 재생성
+}
+
+// 트랙 외곽선을 오프스크린 캔버스에 딱 한 번만 렌더
+function ensureTrackOffscreen() {
+  if (_trackOffscreen) return;
+  const oc = document.createElement('canvas');
+  oc.width = _mapW; oc.height = _mapH;
+  const ctx = oc.getContext('2d');
+
+  const trackPts = D.track.map(p => toMap(p[0], p[1]));
+
+  // 외곽 (진한 테두리)
+  ctx.beginPath();
+  trackPts.forEach((pt, i) => { if(i===0) ctx.moveTo(pt.x,pt.y); else ctx.lineTo(pt.x,pt.y); });
+  ctx.closePath();
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 11;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // 노면
+  ctx.beginPath();
+  trackPts.forEach((pt, i) => { if(i===0) ctx.moveTo(pt.x,pt.y); else ctx.lineTo(pt.x,pt.y); });
+  ctx.closePath();
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 7;
+  ctx.stroke();
+
+  // 중심 점선
+  ctx.beginPath();
+  trackPts.forEach((pt, i) => { if(i===0) ctx.moveTo(pt.x,pt.y); else ctx.lineTo(pt.x,pt.y); });
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([8, 12]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // S/F 마커
+  const sf = toMap(D.track[0][0], D.track[0][1]);
+  ctx.beginPath();
+  ctx.arc(sf.x, sf.y, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
+  _trackOffscreen = oc;
+}
+
+// Convert raw GPS coords to 2D canvas pixel
+function toMap(rawX, rawY) {
+  if (!_map2D || !_mapW || !_mapH) return {x:0,y:0};
+  const pad = 36;
+  const rangeX = _map2D.maxX - _map2D.minX;
+  const rangeY = _map2D.maxY - _map2D.minY;
+  const sc = Math.min((_mapW - 2*pad) / rangeX, (_mapH - 2*pad) / rangeY);
+  const offX = (_mapW - rangeX * sc) / 2;
+  const offY = (_mapH - rangeY * sc) / 2;
+  return {
+    x: offX + (rawX - _map2D.minX) * sc,
+    y: offY + (_map2D.maxY - rawY) * sc   // flip Y (canvas Y goes down)
+  };
+}
+
+// Convert Three.js world pos back to raw GPS
+function worldToRaw(wx, wz) {
+  return { rawX: wx / SCALE + CX, rawY: wz / SCALE + CZ };
+}
+
+function drawTrackMap() {
+  const canvas = document.getElementById('track-map');
+  if (!canvas || !_map2D || !D) return;
+  const w = canvas.width, h = canvas.height;
+  if (w === 0 || h === 0) return;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, w, h);
+
+  // ── 트랙 외곽선: 오프스크린 캐시를 blit (매 프레임 재계산 없음) ────────
+  ensureTrackOffscreen();
+  if (_trackOffscreen) ctx.drawImage(_trackOffscreen, 0, 0);
+
+  // ── Get current standings (sorted by position) ──────────────────────────
+  const standings = D.drivers.map(d => {
+    const st = curState(d.name);
+    return { d, st, pos: st?.pos ?? 99 };
+  }).sort((a,b) => a.pos - b.pos);
+
+  // ── Draw driver dots (텔레메트리 실제 GPS 우선, 그리드 시 랩 기반 폴백) ──
+  const _raceStarted = simTime >= (window._racingLapStart ?? D.sessionStart);
+
+  // 가장 가까운 배틀 쌍 이름 추출 (Layer 3 결과, gap < 5s만)
+  const topBattle = _cachedBattles?.[0];
+  // 5초 이상이면 배틀로 취급하지 않음 (구 캐시 호환용 이중 가드)
+  const battleNames = (topBattle && topBattle.gap < 5)
+    ? new Set([topBattle.ahead.name, topBattle.behind.name])
+    : new Set();
+
+  // 배틀 쌍의 픽셀 좌표 기록 (연결선 그리기용)
+  const battleCoords = {};
+
+  // 배틀 dot 먼저 수집, 일반 dot은 먼저 그리고 배틀 dot은 나중에 (위에 렌더)
+  const dotList = [];
+  standings.forEach(({d, st, pos}) => {
+    let x, y;
+    const tel = _raceStarted ? getTelAt(d.name, simTime) : null;
+    if (tel) {
+      const mp = toMap(tel.x, tel.y);
+      x = mp.x; y = mp.y;
+    } else {
+      const wp = getLapBasedPos(d.name);
+      if (!wp) return;
+      const {rawX, rawY} = worldToRaw(wp.x, wp.z);
+      const mp = toMap(rawX, rawY);
+      x = mp.x; y = mp.y;
+    }
+    dotList.push({d, pos, x, y});
+    if (battleNames.has(d.name)) battleCoords[d.name] = {x, y};
+  });
+
+  // ── 배틀 연결선 (두 드라이버 사이 점선) ──────────────────────────────────
+  // gap < 3s일 때만 연결선 표시 (DRS 범위 수준의 진짜 배틀)
+  if (topBattle && topBattle.gap < 3 &&
+      battleCoords[topBattle.ahead.name] && battleCoords[topBattle.behind.name]) {
+    const c1 = battleCoords[topBattle.ahead.name];
+    const c2 = battleCoords[topBattle.behind.name];
+    // gap이 작을수록 선이 선명해짐
+    const alpha = 0.3 + 0.4 * (1 - topBattle.gap / 3);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(c1.x, c1.y);
+    ctx.lineTo(c2.x, c2.y);
+    ctx.strokeStyle = `rgba(239,68,68,${alpha.toFixed(2)})`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // ── 드라이버 dot 렌더 (배틀 쌍은 마지막에 그려 위로 올림) ────────────────
+  const sorted = [...dotList].sort((a, b) =>
+    (battleNames.has(a.d.name) ? 1 : 0) - (battleNames.has(b.d.name) ? 1 : 0)
+  );
+
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 220); // 펄스 애니메이션
+
+  sorted.forEach(({d, pos, x, y}) => {
+    const isSelected = selectedDriver === d.name;
+    const isBattle   = battleNames.has(d.name);
+    const dotR = isSelected ? 7 : isBattle ? 6 : 5;
+
+    // 배틀 하이라이트 링 (펄스)
+    if (isBattle) {
+      const ringR = dotR + 4 + pulse * 4;
+      ctx.beginPath();
+      ctx.arc(x, y, ringR, 0, Math.PI*2);
+      const grd = ctx.createRadialGradient(x, y, dotR, x, y, ringR + 2);
+      grd.addColorStop(0, `rgba(239,68,68,${0.55 * pulse})`);
+      grd.addColorStop(1, 'rgba(239,68,68,0)');
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+
+    // Selected glow
+    if (isSelected) {
+      ctx.beginPath();
+      ctx.arc(x, y, dotR + 5, 0, Math.PI*2);
+      const grd = ctx.createRadialGradient(x,y,dotR,x,y,dotR+5);
+      grd.addColorStop(0, d.color+'88');
+      grd.addColorStop(1, d.color+'00');
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(x, y, dotR, 0, Math.PI*2);
+    ctx.fillStyle = d.color;
+    ctx.fill();
+    ctx.strokeStyle = isBattle ? '#ef4444' : isSelected ? '#fff' : 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = isBattle ? 2 : isSelected ? 2 : 1;
+    ctx.stroke();
+
+    // Name label
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isBattle ? '#fff' : isSelected ? '#fff' : d.color;
+    ctx.font = `bold ${isBattle||isSelected?10:8}px Consolas, monospace`;
+    ctx.fillText(d.name, x + dotR + 4, y);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LAP-BASED POSITION (2D 맵용 — 트랙 중심선 위)
+// ═══════════════════════════════════════════════════════════════════════════
+function getLapBasedPos(name) {
+  if (!trackCurve) return null;
+  const _raceT = window._racingLapStart ?? D?.sessionStart;
+
+  // 레이스 시작 전: 그리드 위치(carPos)를 그대로 사용
+  if (!_raceT || simTime < _raceT) {
+    const cp = carPos[name];
+    return cp ? { x: cp.x, z: cp.z } : null;
+  }
+
+  const laps = D.driverLaps[name];
+  if (!laps?.length) return null;
+
+  // 현재 랩 탐색
+  let curLap = null, nextLap = null;
+  for (let i = 0; i < laps.length; i++) {
+    if (laps[i][0] <= simTime) {
+      curLap = laps[i];
+      nextLap = laps[i + 1] || null;
+    } else break;
+  }
+  if (!curLap) return null;
+
+  const lapStart = curLap[0];                              // 이 랩 시작 세션 시각
+  // 다음 랩 시작을 끝으로 사용 (없으면 lapTime 필드 활용)
+  const lapEnd = nextLap
+    ? nextLap[0]
+    : lapStart + (curLap[8] > 0 ? curLap[8] : 95);       // [8] = lt (랩타임 초)
+  const lapDur = lapEnd - lapStart;
+  const t = lapDur > 0 ? Math.min(1.0, (simTime - lapStart) / lapDur) : 0;
+
+  return trackCurve.getPointAt(t);   // Three.js 월드 좌표
+}
+
+// ── Map click → select driver ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('track-map');
+  if (!canvas) return;
+  canvas.addEventListener('click', e => {
+    if (!D || !trackCurve) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    let closest = null, closestDist = 22;
+    const _raceOn = simTime >= (window._racingLapStart ?? D.sessionStart);
+    for (const d of D.drivers) {
+      let x, y;
+      const tel = _raceOn ? getTelAt(d.name, simTime) : null;
+      if (tel) {
+        const mp = toMap(tel.x, tel.y);
+        x = mp.x; y = mp.y;
+      } else {
+        const wp = getLapBasedPos(d.name);
+        if (!wp) continue;
+        const {rawX, rawY} = worldToRaw(wp.x, wp.z);
+        const mp = toMap(rawX, rawY);
+        x = mp.x; y = mp.y;
+      }
+      const dist = Math.hypot(x - mx, y - my);
+      if (dist < closestDist) { closestDist = dist; closest = d.name; }
+    }
+    if (closest) selectDrv(closest);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THREE.JS SCENE
+// ═══════════════════════════════════════════════════════════════════════════
+function initScene() {
+  const wrap = document.getElementById('canvas-wrap');
+  renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const w = wrap.clientWidth || window.innerWidth;
+  const h = wrap.clientHeight || (window.innerHeight - 44 - 72 - 40);
+  renderer.setSize(w, h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  wrap.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x06101c);
+  scene.fog = new THREE.FogExp2(0x06101c, 0.0007);
+
+  camera = new THREE.PerspectiveCamera(80, w/h, 0.01, 4000);
+  camera.position.set(0, 200, 300);
+
+  orbit = new THREE.OrbitControls(camera, renderer.domElement);
+  orbit.enableDamping = true; orbit.dampingFactor = 0.06;
+  orbit.minDistance = 10; orbit.maxDistance = 1000;
+
+  scene.add(new THREE.AmbientLight(0x8fb0c8, 1.6));
+  const sun = new THREE.DirectionalLight(0xfff8e7, 3.5);
+  sun.position.set(250,450,180); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left=sun.shadow.camera.bottom=-700;
+  sun.shadow.camera.right=sun.shadow.camera.top=700;
+  sun.shadow.camera.far=1500;
+  scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0x9fc0e0,0x3a5020,0.4));
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(5000,5000),
+    new THREE.MeshStandardMaterial({color:0x1a2c15,roughness:1})
+  );
+  ground.rotation.x=-Math.PI/2; ground.position.y=-0.5; ground.receiveShadow=true;
+  scene.add(ground);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TRACK MESH (3D)
+// ═══════════════════════════════════════════════════════════════════════════
+function buildTrack() {
+  const pts = D.track.map(p=>tw(p[0],p[1]));
+  trackCurve = new THREE.CatmullRomCurve3(pts, true, 'centripetal', 0.35);
+  buildTrackProfile();
+  const SEG = Math.max(D.track.length*5, 800);
+
+  function ribbon(hw, yOff=0) {
+    const pos=[], idx=[], N=SEG;
+    for(let i=0;i<=N;i++){
+      const t=i/N, pt=trackCurve.getPointAt(t), tan=trackCurve.getTangentAt(t);
+      const right=new THREE.Vector3(-tan.z,0,tan.x).normalize();
+      const L=pt.clone().addScaledVector(right,-hw).setY(yOff);
+      const R=pt.clone().addScaledVector(right, hw).setY(yOff);
+      pos.push(L.x,L.y,L.z,R.x,R.y,R.z);
+      if(i<N){const a=i*2,b=a+1,c=a+2,d=a+3; idx.push(a,b,c,b,d,c);}
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setIndex(idx); g.computeVertexNormals(); return g;
+  }
+  const tarmac = new THREE.Mesh(ribbon(HALF_W),
+    new THREE.MeshStandardMaterial({color:0x3a3a3a,roughness:0.95,metalness:0.02}));
+  tarmac.receiveShadow=true; scene.add(tarmac);
+
+  // ── 중앙 점선 ─────────────────────────────────────────────────────────────
+  {
+    const DASH_HW  = HALF_W * 0.04;
+    const Y        = 0.02;
+    const DASH_SEG = 3;
+    const GAP_SEG  = 10;
+    const PERIOD   = DASH_SEG + GAP_SEG;
+    const dPos = [], dIdx = [];
+    let vi = 0;
+    for (let i = 0; i < SEG; i++) {
+      if (i % PERIOD >= DASH_SEG) continue;
+      const t0 = i / SEG, t1 = (i + 1) / SEG;
+      const p0 = trackCurve.getPointAt(t0), p1 = trackCurve.getPointAt(t1);
+      const tan0 = trackCurve.getTangentAt(t0), tan1 = trackCurve.getTangentAt(t1);
+      const r0 = new THREE.Vector3(-tan0.z,0,tan0.x).normalize();
+      const r1 = new THREE.Vector3(-tan1.z,0,tan1.x).normalize();
+      const L0=p0.clone().addScaledVector(r0,-DASH_HW).setY(Y);
+      const R0=p0.clone().addScaledVector(r0, DASH_HW).setY(Y);
+      const L1=p1.clone().addScaledVector(r1,-DASH_HW).setY(Y);
+      const R1=p1.clone().addScaledVector(r1, DASH_HW).setY(Y);
+      dPos.push(L0.x,L0.y,L0.z, R0.x,R0.y,R0.z, L1.x,L1.y,L1.z, R1.x,R1.y,R1.z);
+      dIdx.push(vi,vi+2,vi+1, vi+1,vi+2,vi+3);
+      vi += 4;
+    }
+    const dGeo = new THREE.BufferGeometry();
+    dGeo.setAttribute('position', new THREE.Float32BufferAttribute(dPos, 3));
+    dGeo.setIndex(dIdx);
+    dGeo.computeVertexNormals();
+    scene.add(new THREE.Mesh(dGeo, new THREE.MeshStandardMaterial({
+      color:0xffffff, emissive:0xffffff, emissiveIntensity:0.9,
+      side:THREE.DoubleSide, roughness:0.4
+    })));
+  }
+
+  function kerbRibbon(sign){
+    const pos=[],idx=[],N=SEG;
+    for(let i=0;i<=N;i++){
+      const t=i/N, pt=trackCurve.getPointAt(t), tan=trackCurve.getTangentAt(t);
+      const right=new THREE.Vector3(-tan.z,0,tan.x).normalize();
+      const inner=pt.clone().addScaledVector(right,sign*HALF_W).setY(0.02);
+      const outer=pt.clone().addScaledVector(right,sign*(HALF_W+HALF_W*0.22)).setY(0.02);
+      pos.push(inner.x,inner.y,inner.z,outer.x,outer.y,outer.z);
+      if(i<N){const a=i*2,b=a+1,c=a+2,d=a+3; idx.push(a,b,c,b,d,c);}
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+    g.setIndex(idx); g.computeVertexNormals(); return g;
+  }
+  const kMat=new THREE.MeshStandardMaterial({color:0xcc2200,roughness:0.8});
+  scene.add(new THREE.Mesh(kerbRibbon(-1),kMat));
+  scene.add(new THREE.Mesh(kerbRibbon( 1),kMat));
+
+  // ── Barriers — 두께 있는 박스형 콘크리트 벽 ─────────────────────────────
+  const WALL_DIST  = HALF_W * 1.32;   // 트랙 중심에서 벽 안쪽 면까지
+  const WALL_H     = HALF_W * 0.22;   // 벽 높이  (~1.6m 실제)
+  const WALL_THICK = HALF_W * 0.09;   // 벽 두께  (~0.65m 실제)
+  const CAP_H      = WALL_H * 0.16;   // 상단 빨간 캡 높이
+
+  // 두께+상하면 포함 박스 리본 생성
+  // 단면 4꼭짓점: innerBottom(0) innerTop(1) outerBottom(2) outerTop(3)
+  function buildBarrierGeo(sign, yBase, height, innerD, outerD) {
+    const N = SEG;
+    const pos = [], idx = [];
+
+    for (let i = 0; i <= N; i++) {
+      const t   = i / N;
+      const pt  = trackCurve.getPointAt(t);
+      const tan = trackCurve.getTangentAt(t);
+      const right = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+
+      const iBase = pt.clone().addScaledVector(right, sign * innerD);
+      const oBase = pt.clone().addScaledVector(right, sign * outerD);
+
+      // 4 verts: innerBottom, innerTop, outerBottom, outerTop
+      pos.push(
+        iBase.x, yBase,          iBase.z,
+        iBase.x, yBase + height, iBase.z,
+        oBase.x, yBase,          oBase.z,
+        oBase.x, yBase + height, oBase.z
+      );
+    }
+
+    for (let i = 0; i < N; i++) {
+      const a = i * 4, b = a + 4;
+      // a0=innerBottom_cur  a1=innerTop_cur  a2=outerBottom_cur  a3=outerTop_cur
+      // b0=innerBottom_next b1=innerTop_next b2=outerBottom_next b3=outerTop_next
+
+      // 안쪽 면 (트랙 방향) — DoubleSide라 와인딩 무관하지만 통일
+      idx.push(a,   b,   a+1,  b,   b+1, a+1);
+      // 바깥쪽 면
+      idx.push(a+2, a+3, b+2,  b+2, a+3, b+3);
+      // 윗면
+      idx.push(a+1, b+1, a+3,  b+1, b+3, a+3);
+      // 아랫면
+      idx.push(a,   a+2, b,    b,   a+2, b+2);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  // DoubleSide: 카메라 어느 각도에서도 안 사라짐
+  const concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x9a9ea8, roughness: 0.9, metalness: 0.04,
+    side: THREE.DoubleSide
+  });
+  const redCapMat = new THREE.MeshStandardMaterial({
+    color: 0xcc1100, roughness: 0.7, metalness: 0.0,
+    side: THREE.DoubleSide
+  });
+
+  [-1, 1].forEach(sign => {
+    // 콘크리트 본체
+    const wGeo = buildBarrierGeo(sign, 0, WALL_H, WALL_DIST, WALL_DIST + WALL_THICK);
+    const wMesh = new THREE.Mesh(wGeo, concreteMat);
+    wMesh.castShadow = true; wMesh.receiveShadow = true;
+    scene.add(wMesh);
+
+    // 상단 빨간 캡
+    const cGeo = buildBarrierGeo(sign, WALL_H, CAP_H, WALL_DIST, WALL_DIST + WALL_THICK);
+    const cMesh = new THREE.Mesh(cGeo, redCapMat);
+    scene.add(cMesh);
+  });
+
+
+  // S/F 라인
+  const sfPt = trackCurve.getPointAt(0);
+  const sf = new THREE.Mesh(new THREE.PlaneGeometry(HALF_W*2,1.0),
+    new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffffff,emissiveIntensity:1.2}));
+  sf.rotation.x=-Math.PI/2; sf.position.set(sfPt.x,0.05,sfPt.z);
+  scene.add(sf);
+
+  [{t:0.35,c:0x22c55e},{t:0.70,c:0x3b82f6}].forEach(({t,c})=>{
+    const pt=trackCurve.getPointAt(t);
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,7,6),
+      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.6}));
+    pole.position.set(pt.x,3.5,pt.z); scene.add(pole);
+  });
+}
+
+function buildTrackProfile() {
+  const N = 900;
+  const raw = [];
+  const wrap = i => (i + N) % N;
+
+  for (let i=0; i<N; i++) {
+    const t = i / N;
+    const p = trackCurve.getPointAt(t);
+    const tan = trackCurve.getTangentAt(t).normalize();
+    const a = trackCurve.getTangentAt(wrap(i-8) / N).normalize();
+    const b = trackCurve.getTangentAt(wrap(i+8) / N).normalize();
+    const turn = a.z*b.x - a.x*b.z;
+    raw.push({
+      t, p, tan,
+      right: new THREE.Vector3(tan.z,0,-tan.x).normalize(),
+      turn,
+      curv: clamp(Math.abs(turn) * 3.8, 0, 1)
+    });
+  }
+
+  trackProfile = raw.map((s,i) => {
+    let turn = 0, curv = 0, weight = 0;
+    for (let k=-4; k<=4; k++) {
+      const w = 1 / (1 + Math.abs(k));
+      const v = raw[wrap(i+k)];
+      turn += v.turn * w;
+      curv += v.curv * w;
+      weight += w;
+    }
+    return {...s, turn:turn/weight, curv:curv/weight};
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// F1 CAR — GLB 에셋 로드
+// ═══════════════════════════════════════════════════════════════════════════
+function loadGLB() {
+  return new Promise((resolve, reject) => {
+    const loader = new THREE.GLTFLoader();
+    loader.load('./formula_1_car_model_-_2nd_version.glb', gltf => resolve(gltf.scene), undefined, err => reject(err));
+  });
+}
+
+async function buildCars() {
+  let baseModel = null;
+  try {
+    lmsg(t('load-assets')); lbar(88);
+    baseModel = await loadGLB();
+  } catch(e) {
+    console.warn('GLB 로드 실패 — 폴백 사용:', e);
+  }
+
+  const GLB_SCALE = 0.328;
+
+  for (const d of D.drivers) {
+    const wrapper = new THREE.Group();
+    const pivot   = new THREE.Group();
+    wrapper.add(pivot);
+    wrapper.userData.chassis = pivot;
+
+    if (baseModel) {
+      const clone = baseModel.clone(true);
+      const TYRE_NAMES = new Set([
+        'Object_7','Object_73','Object_85','Object_25',
+        'Object_8','Object_74','Object_87','Object_26',
+        'Object_38','Object_39','Object_68','Object_72','Object_83','Object_89'
+      ]);
+      const SW_COLOR_NAMES = new Set(['Object_14','Object_27','Object_45','Object_65','Object_67','Object_71','Object_77','Object_76']);
+      clone.traverse(c => {
+        if (c.isMesh && c.material) {
+          c.material = c.material.clone();
+          if (TYRE_NAMES.has(c.name)) {
+            c.material.color.set(0x111111);
+            c.material.roughness = 0.9;
+            c.material.metalness = 0.0;
+            c.material.emissive = new THREE.Color(0x000000);
+            c.material.emissiveIntensity = 0;
+          } else if (SW_COLOR_NAMES.has(c.name)) {
+            c.material.color.set(0x1a1a1a);
+            c.material.emissive = new THREE.Color(0x000000);
+            c.material.emissiveIntensity = 0;
+            c.material.roughness = 0.6;
+            c.material.metalness = 0.2;
+          } else {
+            c.material.color.set(d.color);
+            c.material.emissive = new THREE.Color(d.color);
+            c.material.emissiveIntensity = 1.2;
+            c.material.roughness = 0.25;
+            c.material.metalness = 0.1;
+          }
+          c.castShadow = true;
+        }
+      });
+      clone.scale.setScalar(GLB_SCALE);
+      clone.rotation.y = Math.PI / 2;
+      pivot.add(clone);
+      wrapper.userData.model = clone;
+
+      let rearWing = null;
+      clone.traverse(c => {
+        if (!rearWing && c.isMesh) {
+          const n = (c.name||'').toLowerCase();
+          if (n.includes('rear_wing') || n.includes('rearwing') || n.includes('wing_rear')) rearWing = c;
+        }
+      });
+      wrapper.userData.rearWing = rearWing;
+
+      const FL_NAMES = new Set(['Object_7','Object_73','Object_85','Object_25']);
+      const FR_NAMES = new Set(['Object_8','Object_74','Object_87','Object_26']);
+      const flMeshes = [], frMeshes = [];
+      clone.traverse(c => {
+        if (c.isMesh && FL_NAMES.has(c.name)) flMeshes.push(c);
+        if (c.isMesh && FR_NAMES.has(c.name)) frMeshes.push(c);
+      });
+
+      function makeWheelGroup(meshes) {
+        if (!meshes.length) return null;
+        const center = new THREE.Vector3();
+        meshes.forEach(m => {
+          m.updateMatrix();
+          m.geometry.computeBoundingBox();
+          const gc = new THREE.Vector3();
+          m.geometry.boundingBox.getCenter(gc);
+          gc.applyMatrix4(m.matrix);
+          center.add(gc);
+        });
+        center.divideScalar(meshes.length);
+        const parent = meshes[0].parent;
+        const grp = new THREE.Group();
+        grp.position.copy(center);
+        parent.add(grp);
+        meshes.forEach(m => {
+          m.geometry.computeBoundingBox();
+          const gc = new THREE.Vector3();
+          m.geometry.boundingBox.getCenter(gc);
+          m.geometry = m.geometry.clone();
+          m.geometry.translate(-gc.x, -gc.y, -gc.z);
+          m.position.add(gc.clone().applyQuaternion(m.quaternion));
+          parent.remove(m);
+          m.position.sub(center);
+          grp.add(m);
+        });
+        return grp;
+      }
+
+      wrapper.userData.flGroup = makeWheelGroup(flMeshes);
+      wrapper.userData.frGroup = makeWheelGroup(frMeshes);
+      wrapper.userData.frontWheels = [...flMeshes, ...frMeshes];
+
+      const SW_NAMES = new Set(['Object_14','Object_27','Object_45','Object_65','Object_67','Object_71','Object_77','Object_76']);
+      const steeringWheels = [];
+      clone.traverse(c => { if (c.isMesh && SW_NAMES.has(c.name)) steeringWheels.push(c); });
+
+      if (steeringWheels.length > 0) {
+        const center = new THREE.Vector3();
+        steeringWheels.forEach(m => {
+          m.updateMatrix();
+          m.geometry.computeBoundingBox();
+          const gc = new THREE.Vector3();
+          m.geometry.boundingBox.getCenter(gc);
+          gc.applyMatrix4(m.matrix);
+          center.add(gc);
+        });
+        center.divideScalar(steeringWheels.length);
+
+        const swParent = steeringWheels[0].parent;
+        const swGroup = new THREE.Group();
+        swGroup.position.copy(center);
+        swParent.add(swGroup);
+
+        steeringWheels.forEach(m => {
+          m.geometry.computeBoundingBox();
+          const gc = new THREE.Vector3();
+          m.geometry.boundingBox.getCenter(gc);
+          m.geometry = m.geometry.clone();
+          m.geometry.translate(-gc.x, -gc.y, -gc.z);
+          const gcInParent = gc.clone().applyQuaternion(m.quaternion);
+          m.position.add(gcInParent);
+          swParent.remove(m);
+          m.position.sub(center);
+          swGroup.add(m);
+        });
+        wrapper.userData.steeringWheelGroup = swGroup;
+      }
+      wrapper.userData.steeringWheels = steeringWheels;
+
+    } else {
+      const col = new THREE.Color(d.color);
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(HALF_W*0.7, HALF_W*0.1, HALF_W*0.22),
+        new THREE.MeshStandardMaterial({color:col,metalness:.4,roughness:.35})
+      );
+      body.position.y = HALF_W*0.06;
+      body.castShadow = true;
+      pivot.add(body);
+    }
+
+    const glow = new THREE.PointLight(new THREE.Color(d.color), 1.2, HALF_W*1.5);
+    pivot.add(glow);
+    wrapper.visible = false;
+    scene.add(wrapper);
+    carMeshes[d.name]  = wrapper;
+    carPos[d.name]     = new THREE.Vector3();
+    carHead[d.name]    = new THREE.Quaternion();
+    carPrevPos[d.name] = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GRID FORMATION
+// ═══════════════════════════════════════════════════════════════════════════
+function initGrid() {
+  let raceT = Infinity;
+  for (const d of D.drivers) {
+    const laps = D.driverLaps[d.name];
+    if (laps?.length >= 1) raceT = Math.min(raceT, laps[0][0]);
+  }
+  if (!isFinite(raceT)) raceT = D.sessionStart;
+  window._racingLapStart = raceT;
+
+  const telStartIdx = {};
+  let sumX = 0, sumZ = 0, cnt = 0;
+  for (const d of D.drivers) {
+    const tel = D.driverTelemetry[d.name];
+    if (!tel?.length) continue;
+    let i = 0;
+    while (i < tel.length - 1 && tel[i][0] < raceT) i++;
+    telStartIdx[d.name] = i;
+    const p = tw(tel[i][1], tel[i][2]);
+    sumX += p.x; sumZ += p.z; cnt++;
+  }
+  const gcx = cnt ? sumX / cnt : 0;
+  const gcz = cnt ? sumZ / cnt : 0;
+
+  let bestT = 0, bestDist = Infinity;
+  const NSAMP = 2000;
+  for (let i = 0; i <= NSAMP; i++) {
+    const t = i / NSAMP;
+    const p = trackCurve.getPointAt(t);
+    const dd = (p.x - gcx) ** 2 + (p.z - gcz) ** 2;
+    if (dd < bestDist) { bestDist = dd; bestT = t; }
+  }
+  const startTan = trackCurve.getTangentAt(bestT);
+  const right    = new THREE.Vector3(-startTan.z, 0, startTan.x).normalize();
+  const slotSpacing = 8 / 3.638;
+  const initQ = new THREE.Quaternion().setFromRotationMatrix(
+    new THREE.Matrix4().lookAt(startTan, new THREE.Vector3(0,0,0), _up)
+  );
+
+  for (const d of D.drivers) {
+    const tel = D.driverTelemetry[d.name];
+    if (!tel?.length) continue;
+    const idx = telStartIdx[d.name] ?? 0;
+    telIdx[d.name] = idx;
+    const laps    = D.driverLaps[d.name];
+    const gridPos = laps?.[0]?.[3] ?? 20;
+    const lateralSign = (gridPos % 2 === 1) ? 1 : -1;
+    const rowIndex    = Math.floor((gridPos - 1) / 2);
+    const pos = new THREE.Vector3(gcx, 0, gcz)
+      .addScaledVector(startTan, -rowIndex * slotSpacing)
+      .addScaledVector(right,     lateralSign * HALF_W * 0.35);
+    const telPos = tw(tel[idx][1], tel[idx][2]);
+    if (!window._staggerOffset) window._staggerOffset = {};
+    window._staggerOffset[d.name] = new THREE.Vector3(pos.x - telPos.x, 0, pos.z - telPos.z);
+    carPos[d.name].set(pos.x, 0, pos.z);
+    carPrevPos[d.name] = pos.clone();
+    carBasePrev[d.name] = telPos.clone();
+    carLineOffset[d.name] = 0;
+    carSepOffset[d.name] = new THREE.Vector3();
+    carTrackIdx[d.name] = -1;
+    carHead[d.name].copy(initQ);
+    const car = carMeshes[d.name];
+    if (car) { car.position.set(pos.x, 0.02, pos.z); car.quaternion.copy(initQ); car.visible = true; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TELEMETRY INTERPOLATION
+// ═══════════════════════════════════════════════════════════════════════════
+function getTelAt(name, t) {
+  const a = D.driverTelemetry[name];
+  if(!a||!a.length) return null;
+  let i = telIdx[name]||0;
+  if(i>0 && a[i][0]>t) i=0;
+  while(i<a.length-2 && a[i+1][0]<=t) i++;
+  telIdx[name]=i;
+  const t0=a[i], t1=a[Math.min(i+1,a.length-1)];
+  const dt=t1[0]-t0[0], al=dt>0.001?Math.min(1,(t-t0[0])/dt):0;
+  const lp=(a,b)=>a+(b-a)*al;
+  return {x:lp(t0[1],t1[1]),y:lp(t0[2],t1[2]),speed:lp(t0[3],t1[3]),
+          throttle:lp(t0[4],t1[4]),brake:t0[5],gear:t0[6],drs:t0[7]};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAR UPDATE
+// ═══════════════════════════════════════════════════════════════════════════
+const _fwd=new THREE.Vector3(), _mat=new THREE.Matrix4();
+
+function nearestTrackIndex(name, base) {
+  if (!trackProfile.length) return -1;
+  const N = trackProfile.length;
+  const wrap = i => (i + N) % N;
+  let best = carTrackIdx[name] ?? -1;
+  let bestD = Infinity;
+  const scan = (from, to, step=1) => {
+    for (let k=from; k<=to; k+=step) {
+      const i = wrap(k);
+      const p = trackProfile[i].p;
+      const d = (base.x-p.x)*(base.x-p.x) + (base.z-p.z)*(base.z-p.z);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+  };
+  if (best >= 0) scan(best-42, best+42);
+  if (best < 0 || bestD > 900) scan(0, N-1, 3);
+  if (best >= 0) scan(best-4, best+4);
+  carTrackIdx[name] = best;
+  return best;
+}
+
+function cornerLineOffset(name, tel, base, dt) {
+  const st = curState(name);
+  const idx = nearestTrackIndex(name, base);
+  if (!st || idx < 0 || !HALF_W) return new THREE.Vector3(0,0,0);
+
+  const N = trackProfile.length;
+  const at = off => trackProfile[(idx + off + N) % N];
+  const now = at(0);
+  const back = at(-30);
+  const ahead = at(30);
+  const farAhead = at(58);
+  const curvNow = now.curv;
+  const curvBack = back.curv;
+  const curvAhead = Math.max(ahead.curv, farAhead.curv*0.75);
+  const cornerMax = Math.max(curvBack, curvNow, curvAhead);
+  const active = Math.pow(clamp((cornerMax - 0.14) / 0.30, 0, 1), 1.65);
+
+  let turnSign = Math.sign(now.turn || ahead.turn || back.turn || 0);
+  if (!turnSign || active < 0.025) {
+    const prev = carLineOffset[name] ?? 0;
+    const next = prev + (0 - prev) * Math.min(1, dt*1.8);
+    const maxStep = (HALF_W || 1) * dt * 0.75;
+    carLineOffset[name] = prev + clamp(next - prev, -maxStep, maxStep);
+    return now.right.clone().multiplyScalar(carLineOffset[name]);
+  }
+
+  const approach = clamp((curvAhead - curvNow) / 0.22, 0, 1) * active;
+  const exit = clamp((curvBack - curvNow) / 0.22, 0, 1) * active;
+  const apex = active * (1 - Math.max(approach, exit) * 0.72);
+  const insideSide = turnSign;
+  const outsideSide = -turnSign;
+  let meters = outsideSide * (approach + exit) * 3.9 + insideSide * apex * 3.25;
+
+  for (const other of D.drivers) {
+    if (other.name === name) continue;
+    const os = curState(other.name);
+    if (!os || os.lap !== st.lap || Math.abs(os.pos - st.pos) > 1) continue;
+    const raceGap = Math.abs(st.s - os.s);
+    if (raceGap < 1.5) {
+      const attackSide = st.pos > os.pos ? outsideSide : insideSide;
+      meters += attackSide * clamp(1.5 - raceGap, 0.2, 0.9) * active;
+    }
+  }
+
+  const speedFade = clamp((tel.speed - 20) / 80, 0, 1);
+  const target = clamp(meters * (HALF_W / 7.5) * speedFade, -HALF_W*0.74, HALF_W*0.74);
+  const prev = carLineOffset[name] ?? 0;
+  const next = prev + (target - prev) * Math.min(1, dt*2.2);
+  const maxStep = (HALF_W || 1) * dt * 0.95;
+  carLineOffset[name] = prev + clamp(next - prev, -maxStep, maxStep);
+  return now.right.clone().multiplyScalar(carLineOffset[name]);
+}
+
+function updateCar(name, tel, dt) {
+  const car=carMeshes[name]; if(!car) return;
+  const base=tw(tel.x,tel.y);
+  const tgt=base.clone().add(cornerLineOffset(name,tel,base,dt));
+
+  const off = window._staggerOffset?.[name];
+  if (off) {
+    const fade = Math.max(0, 1 - tel.speed / 60);
+    tgt.x += off.x * fade;
+    tgt.z += off.z * fade;
+  }
+
+  const lerp=Math.min(1,dt*12);
+  carPos[name].lerp(tgt,lerp);
+  car.position.set(carPos[name].x, 0.02, carPos[name].z);
+  car.visible=true;
+
+  const prev=carPrevPos[name];
+  if(prev){
+    const dx=tgt.x-prev.x, dz=tgt.z-prev.z;
+    if(dx*dx+dz*dz > 0.001){
+      _fwd.set(dx,0,dz).normalize();
+      _mat.lookAt(_fwd,new THREE.Vector3(0,0,0),_up);
+      _q.setFromRotationMatrix(_mat);
+      carHead[name].slerp(_q,Math.min(1,dt*14));
+    }
+  }
+  carPrevPos[name]=carPos[name].clone();
+  carBasePrev[name]=base.clone();
+  car.quaternion.copy(carHead[name]);
+
+  const ch=car.userData.chassis; if(!ch) return;
+  ch.rotation.x = 0;
+  ch.rotation.y = 0;
+  ch.rotation.z = 0;
+
+  const rw=car.userData.rearWing;
+  if(rw){ const td=tel.drs>9?0.22:0; rw.rotation.z+=(td-rw.rotation.z)*Math.min(1,dt*5); }
+
+  const pf = carPrevFwd[name];
+  if(pf){
+    const turnRate = pf.x*_fwd.z - pf.z*_fwd.x;
+    const steer = THREE.MathUtils.clamp(turnRate * 60, -0.45, 0.45);
+    const flg = car.userData.flGroup;
+    const frg = car.userData.frGroup;
+
+    if(flg && !car.userData.wheelInit){
+      car.userData.wheelInit = true;
+      car.updateMatrixWorld(true);
+      [['flGroup'], ['frGroup']].forEach(([key]) => {
+        const grp = car.userData[key];
+        if(!grp || !grp.children.length) return;
+        const wc = new THREE.Vector3();
+        grp.children.forEach(m => { const p=new THREE.Vector3(); m.getWorldPosition(p); wc.add(p); });
+        wc.divideScalar(grp.children.length);
+        const lc = wc.clone();
+        grp.parent.worldToLocal(lc);
+        const delta = lc.clone().sub(grp.position);
+        grp.position.copy(lc);
+        grp.children.forEach(m => m.position.sub(delta));
+      });
+    }
+
+    if(flg) flg.rotation.z = carSteer[name] * -0.12;
+    if(frg) frg.rotation.z = carSteer[name] * -0.12;
+
+    if(!carSteer[name]) carSteer[name]=0;
+    carSteer[name] += (steer*2.5 - carSteer[name])*Math.min(1,dt*3);
+    const swg = car.userData.steeringWheelGroup;
+    if(swg) swg.rotation.x = -carSteer[name];
+  }
+  carPrevFwd[name] = _fwd.clone();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAR SEPARATION
+// ═══════════════════════════════════════════════════════════════════════════
+function separateCars(dt) {
+  const LATERAL_MIN = 0.70;
+  const ALONG_MIN   = 1.55;
+  const pos = {}, base = {}, names = [];
+  for (const d of D.drivers) {
+    const car = carMeshes[d.name];
+    if (!car?.visible) continue;
+    base[d.name] = { x: car.position.x, z: car.position.z };
+    pos[d.name] = { x: car.position.x, z: car.position.z };
+    names.push(d.name);
+  }
+  for (let iter = 0; iter < 3; iter++) {
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        const a = names[i], b = names[j];
+        const pa = pos[a], pb = pos[b];
+        const dx = pa.x - pb.x, dz = pa.z - pb.z;
+        const dist2 = dx*dx + dz*dz;
+        if (dist2 > (ALONG_MIN*ALONG_MIN) || dist2 < 1e-8) continue;
+        const fwd = new THREE.Vector3(0,0,1).applyQuaternion(carHead[a]);
+        const latX = fwd.z, latZ = -fwd.x;
+        const alongComp  = dx*fwd.x  + dz*fwd.z;
+        const lateralComp = dx*latX  + dz*latZ;
+        if (Math.abs(alongComp) >= ALONG_MIN) continue;
+        if (Math.abs(lateralComp) < LATERAL_MIN) {
+          const deficit = (LATERAL_MIN - Math.abs(lateralComp)) * 0.5 + 0.01;
+          const s = lateralComp >= 0 ? 1 : -1;
+          pa.x += latX*s*deficit; pa.z += latZ*s*deficit;
+          pb.x -= latX*s*deficit; pb.z -= latZ*s*deficit;
+        }
+      }
+    }
+  }
+  for (const [n, p] of Object.entries(pos)) {
+    const b = base[n];
+    const target = new THREE.Vector3(p.x-b.x, 0, p.z-b.z);
+    if (!carSepOffset[n]) carSepOffset[n] = new THREE.Vector3();
+    const sep = carSepOffset[n];
+    sep.lerp(target, Math.min(1, dt*7));
+    const len = sep.length();
+    if (len > 0.95) sep.multiplyScalar(0.95/len);
+    carMeshes[n].position.x = b.x + sep.x;
+    carMeshes[n].position.z = b.z + sep.z;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SPEED EFFECTS
+// ═══════════════════════════════════════════════════════════════════════════
+function initSpeedParticles() { /* removed */ }
+function updateSpeedParticles() { /* removed */ }
+
+function drawSpeedVignette(speed) {
+  const canvas = document.getElementById('speed-vignette');
+  if (!canvas) return;
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  if (!w || !h) return;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+
+  const ratio = clamp(speed / 280, 0, 1);
+  if (ratio < 0.04) return;
+
+  // 터널 비네팅
+  const cx = w/2, cy = h/2, r = Math.min(w, h);
+  const grd = ctx.createRadialGradient(cx, cy, r*0.22, cx, cy, r*0.78);
+  grd.addColorStop(0, 'rgba(0,0,0,0)');
+  grd.addColorStop(1, `rgba(0,0,0,${(ratio * 0.35).toFixed(2)})`);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, w, h);
+
+  // 좌우 속도선 (고속 구간만)
+  if (ratio > 0.55) {
+    const lineRatio = (ratio - 0.55) / 0.45;
+    ctx.strokeStyle = `rgba(180,210,255,${(lineRatio * 0.18).toFixed(2)})`;
+    ctx.lineWidth = 1;
+    const lineCount = Math.floor(lineRatio * 12);
+    for (let i = 0; i < lineCount; i++) {
+      const yPos = (i / lineCount) * h;
+      ctx.beginPath();
+      ctx.moveTo(0, yPos); ctx.lineTo(w * 0.12, yPos + (Math.random()-0.5)*4);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w, yPos); ctx.lineTo(w * 0.88, yPos + (Math.random()-0.5)*4);
+      ctx.stroke();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMERA (3D pod)
+// ═══════════════════════════════════════════════════════════════════════════
+function updateCamera(dt){
+  const badge=document.getElementById('cam-badge');
+  if(camMode==='orbit'){ orbit.enabled=true; orbit.update(); badge.textContent='ORBIT'; return; }
+  orbit.enabled=false;
+  const drv=followTarget||D.drivers[0]?.name;
+  const car=carMeshes[drv]; if(!car||!car.visible){ orbit.update(); return; }
+  const cp=car.position;
+
+  document.getElementById('pod-driver-badge').textContent = `📺 ${drv}`;
+
+  if(camMode==='follow'){
+    badge.textContent='FOLLOW · '+drv;
+    const fwd=new THREE.Vector3(0,0,1).applyQuaternion(car.quaternion);
+    const ideal=cp.clone().addScaledVector(fwd,-45).add(new THREE.Vector3(0,22,0));
+    _camPos.lerp(ideal,Math.min(1,dt*4));
+    _camTgt.lerp(cp,Math.min(1,dt*6));
+    camera.position.copy(_camPos); camera.lookAt(_camTgt);
+  } else if(camMode==='tv'){
+    badge.textContent='TV POD · '+drv;
+    const fwd=new THREE.Vector3(0,0,1).applyQuaternion(car.quaternion);
+    const ideal = cp.clone()
+                    .addScaledVector(fwd, -HALF_W * 0.02)
+                    .add(new THREE.Vector3(0, HALF_W * 0.095, 0));
+    const look  = cp.clone()
+                    .addScaledVector(fwd, HALF_W * 15)
+                    .add(new THREE.Vector3(0, HALF_W * 0.15, 0));
+    camera.position.copy(ideal);
+    camera.lookAt(look);
+    // 동적 FOV: 속도에 비례해 화각 넓힘 (80° → 106°)
+    const tel = getTelAt(drv, simTime);
+    const speed = tel?.speed ?? 0;
+    const targetFov = 80 + clamp(speed / 290, 0, 1) * 12;
+    camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 2.5);
+    camera.updateProjectionMatrix();
+  } else if(camMode==='top'){
+    badge.textContent='TOP VIEW';
+    const ideal=new THREE.Vector3(0,700,0);
+    camera.position.lerp(ideal,Math.min(1,dt*3));
+    camera.lookAt(0,0,0);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STANDINGS / STATE
+// ═══════════════════════════════════════════════════════════════════════════
+function curState(name){
+  const laps=D.driverLaps[name]; if(!laps||!laps.length) return null;
+  let cur=laps[0];
+  for(const l of laps){ if(l[0]<=simTime) cur=l; else break; }
+  const frac = getTrackFraction(name);
+  const sector = frac ? sectorFromProgress(frac.t) : 1;
+  const sectorProgress = sectorStartProgress(sector);
+  const rawPit = cur[7] ?? 0;
+  // driverLaps의 pit 플래그는 "이 랩에 PitInTime이 있음"이라는 이벤트 플래그다.
+  // 랩 전체를 피트 중으로 보면 18랩 시작부터 PIT 처리되므로, 피트 진입이
+  // 실제로 가까운 랩 후반부터만 active 상태로 해석한다.
+  const pitActive = rawPit && ((frac?.t ?? 0) >= 0.75);
+  return {
+    s:cur[0], e:cur[1], lap:cur[2], pos:cur[3], comp:cur[4],
+    tl:cur[5], spd:cur[6], pit:pitActive ? 1 : 0, rawPit, lt:cur[8],
+    sector,
+    lapPoint: cur[2] + sectorProgress,
+    tlPoint: (cur[5] ?? 0) + sectorProgress,
+  };
+}
+function updateTower(){
+  const raceOn = simTime >= (window._racingLapStart ?? D.sessionStart);
+  const resetPositionMemory =
+    _lastTowerSimTime == null ||
+    simTime < _lastTowerSimTime ||
+    Math.abs(simTime - _lastTowerSimTime) > 6;
+  if (resetPositionMemory) {
+    _lastTowerPos.clear();
+    _towerPosFlash.clear();
+    _towerPosCooldown.clear();
+  }
+  _lastTowerSimTime = simTime;
+
+  let rows=D.drivers.map(d=>{
+    const st=curState(d.name)||{pos:20,comp:'M',lap:1,pit:0,tl:0};
+    return{...d,...st,officialPos:st.pos};
+  });
+  if (raceOn) {
+    rows = rows
+      .map(s => {
+        const fr = getTrackFraction(s.name);
+        const trackPos = fr ? fr.lap + fr.t : -Infinity;
+        return {...s, trackPos};
+      })
+      .sort((a,b)=>b.trackPos-a.trackPos || a.officialPos-b.officialPos)
+      .map((s,i)=>({...s,pos:i+1}));
+  } else {
+    rows = rows.sort((a,b)=>a.officialPos-b.officialPos);
+  }
+  const now = performance.now();
+
+  const leader=rows[0];
+  const leaderSt=curState(leader.name);
+
+  // ── LAYER 1: BRUTE FORCE O(D²) — DRS 가용 드라이버 ──────────────────────
+  _drsAvailable = raceOn ? computeDRS_BruteForce(rows) : new Set();
+
+  // ── LAYER 2: D&C O(log L) — 언더컷 추천 드라이버 ────────────────────────
+  const undercutSet = raceOn ? computeUndercutSet(rows) : new Set();
+
+  let html='';
+  rows.forEach((s,i)=>{
+    const prevPos = _lastTowerPos.get(s.name);
+    const cooldownUntil = _towerPosCooldown.get(s.name) ?? 0;
+    if (prevPos != null && prevPos !== s.pos && now >= cooldownUntil) {
+      const dir = s.pos < prevPos ? 'up' : 'down';
+      _towerPosFlash.set(s.name, { dir, delta: Math.abs(prevPos - s.pos), until: now + 3000 });
+      _towerPosCooldown.set(s.name, now + 9000);
+    }
+    const posFlash = _towerPosFlash.get(s.name);
+    const showPosFlash = posFlash && posFlash.until > now;
+    if (posFlash && !showPosFlash) _towerPosFlash.delete(s.name);
+    const posDirClass = showPosFlash ? ` pos-${posFlash.dir}` : '';
+    const posDelta = showPosFlash
+      ? `<span class="pos-delta ${posFlash.dir}">${posFlash.dir === 'up' ? '▲' : '▼'}${posFlash.delta}</span>`
+      : '<span class="pos-delta"></span>';
+    const tc=s.comp==='S'?'#FF5252':s.comp==='M'?'#FFC107':'#ECEFF1';
+    const pit=s.pit?`<span class="pit-tag">P</span>`:'';
+    // [억지기법] DRS 전수 체크: 배틀 중(gap<1s)인 차량은 DRS 배지 강조
+    const inBattle = _cachedBattles?.[0]?.gap < 1 &&
+      (_cachedBattles[0].ahead.name===s.name || _cachedBattles[0].behind.name===s.name);
+    const drs=_drsAvailable.has(s.name)
+      ?`<span class="drs-badge${inBattle?' drs-badge-hot':''}">DRS</span>`:'';
+    const ucut=undercutSet.has(s.name)?`<span class="pit-badge">⚡PIT NOW</span>`:'';
+    const sel=selectedDriver===s.name?' selected':'';
+    let gap='';
+    if(i===0) gap=`<span style="color:#ffd700">LDR</span>`;
+    else {
+      const mst=curState(s.name);
+      if(mst&&leaderSt){
+        const dl=leader.lap-s.lap;
+        if(dl>0) gap=`+${dl}L`;
+        else{
+          // 트랙 분율 기반 갭 (리더 기준)
+          const fL=getTrackFraction(leader.name), fM=getTrackFraction(s.name);
+          if(fL&&fM&&fL.lap===fM.lap){
+            const gs=(fL.t-fM.t)*fL.lapDur;
+            gap=gs>0?`+${gs.toFixed(1)}`:'—';
+          } else {
+            gap='—';
+          }
+        }
+      }
+    }
+    html+=`<div class="t-row${sel}${posDirClass}" onclick="selectDrv('${s.name}')">
+      <div class="pos-box${s.pos<=3?' top3':''}${posDirClass}">${s.pos}</div>
+      ${posDelta}
+      <div class="team-bar" style="background:${s.color}"></div>
+      <span class="d-abbr" style="color:${s.color}">${s.name}</span>
+      ${pit}${drs}${ucut}
+      <span class="d-gap">${gap}</span>
+      <div class="tyre-dot" style="background:${tc};color:${s.comp==='S'?'#fff':'#1a1a1a'}">${s.comp}</div>
+    </div>`;
+  });
+  document.getElementById('tower-rows').innerHTML=html;
+  rows.forEach(s => _lastTowerPos.set(s.name, s.pos));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DRIVER SELECT + TELEMETRY BAR
+// ═══════════════════════════════════════════════════════════════════════════
+function selectDrv(name){
+  selectedDriver=name; followTarget=name;
+  _lastBBResult = null; // 드라이버 전환 시 B&B 강제 갱신
+  const sel = document.getElementById('pod-driver-sel');
+  if (sel) sel.value = name;
+  updateTelemBar();
+  updateUndercutPanel(name);
+}
+function updateUndercutPanel(name){
+  if (_bbActive) return; // B&B 결과 표시 중 — 덮어쓰지 않음
+  const emptyEl = document.getElementById('ucp-empty');
+  const dataEl  = document.getElementById('ucp-data');
+  if (!emptyEl || !dataEl) return;
+  if (!name) {
+    emptyEl.style.display = 'flex';
+    dataEl.style.display  = 'none';
+    return;
+  }
+
+  const info = D?.drivers?.find(d => d.name === name);
+  const st   = curState(name);
+  if (!info || !st) {
+    emptyEl.style.display = 'flex';
+    dataEl.style.display  = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  dataEl.style.display  = 'flex';
+
+  // 드라이버 기본 정보
+  const compColor = { S:'#FF5252', M:'#FFC107', H:'#ECEFF1' };
+  document.getElementById('ucp-drv-color').style.background = info.color;
+  document.getElementById('ucp-drv-name').textContent = name;
+  document.getElementById('ucp-drv-name').style.color = info.color;
+  document.getElementById('ucp-drv-team').textContent = info.fullTeam || info.team || '';
+
+  const r = calcUndercutProb(name);
+
+  if (!r) {
+    // 피트 중에는 "지금 피트인할 확률"이 더 이상 적용되지 않으므로 상태를 명시한다.
+    const isPitting = !!st.pit;
+    document.getElementById('ucp-prob-val').textContent = isPitting ? t('js-pit') : '—%';
+    document.getElementById('ucp-prob-val').style.color = isPitting ? '#ffd700' : '#555';
+    document.getElementById('ucp-prob-bar').style.width = '0%';
+    document.getElementById('ucp-prob-bar').style.background = isPitting ? '#ffd700' : '#555';
+    document.getElementById('ucp-gap').textContent = isPitting ? t('js-pit') : '—';
+    document.getElementById('ucp-front-name').textContent = isPitting ? t('js-in-lap') : (name === D.drivers[0]?.name ? t('js-leader') : '—');
+    document.getElementById('ucp-comp').textContent = st.comp;
+    document.getElementById('ucp-comp').style.color = compColor[st.comp]||'#e6edf3';
+    document.getElementById('ucp-age-sub').textContent = `${st.tl} ${t('js-laps')}${isPitting ? ' · '+t('js-pit') : ''}`;
+    document.getElementById('ucp-pace').textContent = '—';
+    document.getElementById('ucp-warmup').textContent = isPitting ? t('js-pit-lane') : t('js-warmup-blank');
+    document.getElementById('ucp-net').textContent = isPitting ? t('js-exec') : '—';
+    document.getElementById('ucp-net').style.color = isPitting ? '#ffd700' : '#e6edf3';
+    document.getElementById('ucp-optlap').textContent = isPitting ? `IN ${st.lap} S${st.sector}` : t('js-opt-lap-blank');
+    return;
+  }
+
+  // ── 확률 표시 ──────────────────────────────────────────────────────────
+  const prob = r.prob;
+  const probColor = prob >= 70 ? '#22c55e' : prob >= 45 ? '#FFC107' : '#ef4444';
+  document.getElementById('ucp-prob-val').textContent = prob + '%';
+  document.getElementById('ucp-prob-val').style.color = probColor;
+  document.getElementById('ucp-prob-bar').style.width = prob + '%';
+  document.getElementById('ucp-prob-bar').style.background = probColor;
+
+  // ── 갭 ─────────────────────────────────────────────────────────────────
+  document.getElementById('ucp-gap').textContent = r.gap + 's';
+  document.getElementById('ucp-gap').style.color = parseFloat(r.gap) <= 1.5 ? '#22c55e' : '#e6edf3';
+  document.getElementById('ucp-front-name').textContent = r.frontName;
+
+  // ── 타이어 ─────────────────────────────────────────────────────────────
+  document.getElementById('ucp-comp').textContent = r.comp;
+  document.getElementById('ucp-comp').style.color = compColor[r.comp]||'#e6edf3';
+  document.getElementById('ucp-age-sub').textContent = `${r.age} ${t('js-laps')}`;
+
+  // ── 페이스 이득 ────────────────────────────────────────────────────────
+  document.getElementById('ucp-pace').textContent = '+' + r.paceDelta + 's';
+  document.getElementById('ucp-pace').style.color = '#22c55e';
+
+  // ── 피트 손실 + 웜업 ───────────────────────────────────────────────────
+  document.getElementById('ucp-warmup').textContent = _lang==='ko' ? `웜업 ${r.warmup}초` : `WARMUP ${r.warmup}s`;
+
+  // ── 순이득 ─────────────────────────────────────────────────────────────
+  const net = parseFloat(r.netGain);
+  document.getElementById('ucp-net').textContent = (net >= 0 ? '+' : '') + r.netGain + 's';
+  document.getElementById('ucp-net').style.color = net >= 0 ? '#22c55e' : '#ef4444';
+  document.getElementById('ucp-optlap').textContent = _lang==='ko' ? `최적 ${r.optLabel} (${r.bsIters}회)` : `OPT ${r.optLabel} (${r.bsIters}eval)`;
+
+
+}
+
+function updateTelemBar(){
+  const name = selectedDriver;
+  const empty = document.getElementById('telem-empty');
+  const drvEl = document.getElementById('telem-drv');
+  const statsEl = document.getElementById('telem-stats');
+  const barsEl = document.getElementById('telem-bars');
+  const extraEl = document.getElementById('telem-extra');
+
+  if(!name){
+    empty.style.display=''; drvEl.style.display='none';
+    statsEl.style.display='none'; barsEl.style.display='none'; extraEl.style.display='none';
+    return;
+  }
+  const info=D.drivers.find(d=>d.name===name); if(!info) return;
+  const st=curState(name);
+  const tel=getTelAt(name,simTime);
+
+  empty.style.display='none';
+  drvEl.style.display='flex';
+  statsEl.style.display='flex';
+  barsEl.style.display='flex';
+  extraEl.style.display='flex';
+
+  document.getElementById('telem-color').style.background = info.color;
+  document.getElementById('telem-name').style.color = info.color;
+  document.getElementById('telem-name').textContent = name;
+  document.getElementById('telem-team').textContent = info.fullTeam || info.team || '';
+
+  if(tel){
+    document.getElementById('ts-speed').textContent = Math.round(tel.speed);
+    document.getElementById('ts-gear').textContent = tel.gear;
+    document.getElementById('ts-drs').textContent = tel.drs>9?t('js-drs-on'):t('js-drs-off');
+    document.getElementById('ts-drs').style.color = tel.drs>9?'#22c55e':'#555';
+    const thr = Math.round(tel.throttle);
+    document.getElementById('bar-thr').style.width = thr+'%';
+    document.getElementById('val-thr').textContent = thr+'%';
+    document.getElementById('bar-brk').style.width = tel.brake?'100%':'0%';
+    document.getElementById('val-brk').textContent = tel.brake?t('js-brake-on'):t('js-brake-off');
+    document.getElementById('val-brk').style.color = tel.brake?'#ef4444':'#555';
+  }
+
+  if(st){
+    document.getElementById('te-pos').textContent = 'P'+st.pos;
+    document.getElementById('te-lap').textContent = `${st.lap} S${st.sector}/53`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// POD OVERLAY TOGGLE
+// ═══════════════════════════════════════════════════════════════════════════
+function togglePod() {
+  const overlay = document.getElementById('pod-overlay');
+  const isHidden = overlay.style.display === 'none' || !overlay.style.display;
+  if (isHidden) {
+    overlay.style.display = 'flex';
+    // Resize Three.js to pod canvas
+    requestAnimationFrame(() => {
+      const wrap = document.getElementById('canvas-wrap');
+      const w = wrap.clientWidth, h = wrap.clientHeight;
+      if (w > 0 && h > 0) {
+        camera.aspect = w/h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }
+    });
+    if(camMode === 'orbit') setCam('tv');
+  } else {
+    overlay.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UI BINDINGS
+// ═══════════════════════════════════════════════════════════════════════════
+function computeDRS_BruteForce() {
+  return new Set(algorithmFrameAt(simTime)?.drs ?? []);
+}
+
+function computeUndercutSet() {
+  return new Set(algorithmFrameAt(simTime)?.undercut ?? []);
+}
+
+function calcUndercutProb(name) {
+  return algorithmFrameAt(simTime)?.undercutDetails?.[name] ?? null;
+}
+
+function findTopBattles_DC(k) {
+  const battles = algorithmFrameAt(simTime)?.battles ?? [];
+  // 5초 이상 gap은 배틀이 아닌 단순 근접 → 필터링
+  // (캐시가 구 임계값(60s)으로 빌드된 경우에도 올바르게 동작)
+  return battles.filter(b => b.gap < 5).slice(0, k ?? 3);
+}
+
+function bindUI(){
+  document.getElementById('btn-play').addEventListener('click',()=>{
+    playing=!playing;
+    document.getElementById('btn-play').textContent=playing?t('ui-pause'):t('ui-play');
+  });
+  window.setSpeed = function(v){
+    speedMult = v;
+    [1,2,5].forEach(x=>{
+      const b = document.getElementById('spd-'+x);
+      if(b) b.classList.toggle('cam-active', x===v);
+    });
+  };
+  document.getElementById('seek').addEventListener('input',e=>{
+    simTime = parseFloat(e.target.value);
+    _simAccum = 0;
+  });
+  // cam buttons
+  ['tv','follow','orbit','top'].forEach(m=>{
+    const b=document.getElementById('cam-'+m);
+    if(b) b.addEventListener('click',()=>setCam(m));
+  });
+}
+// ═══════════════════════════════════════════════════════════════════════════
+// TRACK FRACTION — shared utility
+// ═══════════════════════════════════════════════════════════════════════════
+function getTrackFraction(name) {
+  const laps = D.driverLaps[name];          // curState와 동일한 소스
+  if (!laps || laps.length === 0) return null;
+
+  // lapRow[0]=lapStartSec, lapRow[2]=lapNumber, lapRow[8]=lapTimeSec(duration)
+  let lapRow = null;
+  for (let i = laps.length - 1; i >= 0; i--) {
+    if (laps[i][0] <= simTime) { lapRow = laps[i]; break; }
+  }
+  if (!lapRow) lapRow = laps[0];
+
+  const lapStart = lapRow[0];
+  const lapDur   = lapRow[8];
+  if (!lapDur || lapDur <= 0) return null;
+
+  const t = Math.min(1.0, Math.max(0, (simTime - lapStart) / lapDur));
+  return { t, lapDur, lap: lapRow[2] };
+}
+// ═══════════════════════════════════════════════════════════════════════════
+// BATTLES OVERLAY UPDATE
+// ═══════════════════════════════════════════════════════════════════════════
+function updateBattlesOverlay() {
+  const now = performance.now();
+  if (now - _lastBattles < 800) return;
+  _lastBattles = now;
+
+  const battles = findTopBattles_DC(3);
+  _cachedBattles = battles;
+
+  // [분할정복] gap < 0.5s → BATTLE TRIGGERED 배너 표시
+  const banner = document.getElementById('battle-trigger-banner');
+  if (banner) {
+    const triggered = battles.length > 0 && battles[0].gap < 0.5;
+    if (triggered) {
+      const b = battles[0];
+      banner.textContent = `🔥 BATTLE TRIGGERED — ${b.behind.name} ▷ ${b.ahead.name}  ${b.gap.toFixed(2)}s`;
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  const list = document.getElementById('battles-list');
+  if (!list) return;
+
+  if (!battles || !battles.length) {
+    list.innerHTML = `<div style="color:#333;font-size:9px">${t('battles-loading')}</div>`;
+    return;
+  }
+
+  // [억지기법] 배틀 목록에 DRS 가용 여부 표시 (gap ≤ 1s 전수 체크)
+  list.innerHTML = battles.map(b => {
+    const gapStr = b.gap < 1 ? b.gap.toFixed(2) + 's' : b.gap.toFixed(1) + 's';
+    const drsTag = _drsAvailable.has(b.behind.name)
+      ? `<span style="font-size:7px;color:#22c55e;border:1px solid rgba(34,197,94,.5);border-radius:2px;padding:1px 3px;flex-shrink:0">DRS</span>`
+      : '';
+    return `<div style="display:flex;align-items:center;gap:4px;padding:2px 0;font-size:9px;font-family:Consolas">
+      <span style="color:${b.behind.color||'#fff'};font-weight:700">${b.behind.name}</span>
+      ${drsTag}
+      <span style="color:#555;font-size:8px">▷</span>
+      <span style="color:${b.ahead.color||'#fff'};font-weight:700">${b.ahead.name}</span>
+      <span style="color:#ffd700;margin-left:auto">${gapStr}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// [동적 계획법] DP ETA — 랩별 예상 완주 시간 업데이트
+// ═══════════════════════════════════════════════════════════════════════════
+let _lastEtaUpdate = 0;
+function updateDpEta() {
+  const now = performance.now();
+  if (now - _lastEtaUpdate < 600) return;
+  _lastEtaUpdate = now;
+
+  const list = document.getElementById('dp-eta-rows');
+  if (!list || !A?.dpEta) return;
+
+  let html = '';
+  for (const name of ['VER', 'HAM']) {
+    const st = curState(name);
+    if (!st) continue;
+    const lap = st.lap;
+    const eta = A.dpEta[name]?.[String(lap)];
+    if (!eta) continue;
+    const compColor = {S:'#FF5252', M:'#FFC107', H:'#ECEFF1'}[st.comp] || '#fff';
+    html += `<div class="dp-row">
+      <span style="color:${compColor};min-width:22px;font-weight:700">${name}</span>
+      <span style="color:#444;font-size:8px">L${lap}</span>
+      <span style="color:#333;font-size:8px">${st.comp}+${Math.round(st.tl||0)}</span>
+      <span class="dp-eta-val">${eta.label}</span>
+    </div>`;
+  }
+  list.innerHTML = html || `<div style="color:#333;font-size:9px">—</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// [분기 한정] B&B 피트 트리거 체크 + 팝업 표시
+// ═══════════════════════════════════════════════════════════════════════════
+let _bbActive = false;    // B&B 패널 활성화 여부 (true면 updateUndercutPanel 스킵)
+let _lastBBResult = null; // 현재 표시 중인 B&B 결과 (변경 감지용)
+
+// 특정 드라이버의 simTime 기준 가장 최근 B&B 결과 반환
+function getBBResultForDriver(name) {
+  const results = A?.branchBound?.[name];
+  if (!results?.length) return null;
+  const driverLaps = D?.driverLaps?.[name];
+  if (!driverLaps) return null;
+  let active = null;
+  for (const r of results) {
+    const row = driverLaps.find(lr => lr[2] === r.from_lap);
+    if (!row) continue;
+    if (simTime >= row[0] + (row[8] || 90)) active = r;
+  }
+  return active;
+}
+
+function checkBranchBound() {
+  if (!A?.branchBound) return;
+  // 선택된 드라이버 기준, 없으면 VER 기본
+  const target = selectedDriver || 'VER';
+  const activeResult = getBBResultForDriver(target);
+
+  // 상태가 달라졌을 때만 UI 업데이트
+  if (activeResult === _lastBBResult) return;
+  _lastBBResult = activeResult;
+
+  if (activeResult) {
+    showBranchBound(activeResult);
+  } else {
+    _resetBBPanel();
+  }
+}
+
+function _resetBBPanel() {
+  _bbActive = false;
+  const emptyEl = document.getElementById('ucp-empty');
+  const dataEl  = document.getElementById('ucp-data');
+  if (emptyEl) emptyEl.style.display = 'flex';
+  if (dataEl)  dataEl.style.display  = 'none';
+}
+
+function showBranchBound(result) {
+  const emptyEl = document.getElementById('ucp-empty');
+  const dataEl  = document.getElementById('ucp-data');
+  if (!emptyEl || !dataEl) return;
+
+  _bbActive = true;
+  emptyEl.style.display = 'none';
+  dataEl.style.display  = 'flex';
+
+  // 드라이버 색상
+  const drvInfo = D?.drivers?.find(d => d.name === result.driver);
+  const drvColor = drvInfo?.color || '#3b82f6';
+  document.getElementById('ucp-drv-color').style.background = drvColor;
+  document.getElementById('ucp-drv-name').textContent = result.driver;
+  document.getElementById('ucp-drv-name').style.color  = drvColor;
+  document.getElementById('ucp-drv-team').textContent  = `L${result.from_lap} ${t('bb-pit-moment')}`;
+
+  // B&B 최적 잔여 시간
+  const optTime = result.optimal_time || 0;
+  const m = Math.floor(optTime / 60);
+  const s = (optTime % 60).toFixed(1).padStart(4, '0');
+  document.getElementById('ucp-prob-val').textContent = `${m}:${s}`;
+  document.getElementById('ucp-prob-val').style.color = '#3b82f6';
+
+  // 최적 시퀀스
+  const optSeq = result.optimal_seq || [];
+  const optSeqStr = optSeq.length === 0
+    ? t('bb-no-stop')
+    : optSeq.map(p => `${t('bb-from-lap')}${p.lap}→${p.to}`).join('  ');
+  document.getElementById('ucp-gap').textContent = optSeqStr;
+  document.getElementById('ucp-front-name').textContent =
+    `${_lang === 'ko' ? '기준' : 'from'} ${t('bb-from-lap')}${result.from_lap}`;
+
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  const rawDt = clock.getDelta();
+
+  if (playing) {
+    simTime += rawDt * speedMult;
+    const seekEl = document.getElementById('seek');
+    if (seekEl) {
+      seekEl.value = simTime;
+      if (simTime >= parseFloat(seekEl.max)) {
+        simTime = parseFloat(seekEl.max);
+        playing = false;
+        const btn = document.getElementById('btn-play');
+        if (btn) btn.textContent = t('ui-play');
+      }
+    }
+  }
+
+  const dt = Math.min(rawDt * speedMult, 0.5);
+
+  // Update all car meshes
+  D.drivers.forEach(d => {
+    const tel = getTelAt(d.name, simTime);
+    updateCar(d.name, tel, dt);
+  });
+  separateCars(dt);
+
+  // Speed vignette for follow target
+  const followTel = followTarget ? getTelAt(followTarget, simTime) : null;
+  const followSpeed = followTel?.speed ?? 0;
+  drawSpeedVignette(followSpeed);
+
+  // Render 3D (only when TV POD overlay is visible)
+  const pod = document.getElementById('pod-overlay');
+  if (pod && pod.style.display !== 'none') {
+    updateCamera(dt);
+    renderer.render(scene, camera);
+  }
+
+  // Draw 2D track map (always)
+  drawTrackMap();
+
+  // Update timing tower every 400ms
+  const nowMs = performance.now();
+  if (nowMs - _lastTower > 400) {
+    _lastTower = nowMs;
+    updateTower();
+  }
+
+  updateTelemBar();
+  updateBattlesOverlay();
+  updateTopBar();
+  updateDpEta();          // [DP] 랩별 예상 완주 시간
+  checkBranchBound();     // [B&B] 피트인 시점 팝업 트리거
+  if (selectedDriver) updateUndercutPanel(selectedDriver);
+}
+
+// ── 분석 패널 펼치기/접기 ─────────────────────────────────────────────────
+function toggleGpAnalysis() {
+  const body = document.getElementById('gp-analysis-body');
+  const icon = document.getElementById('gp-toggle-icon');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  icon.setAttribute('data-i18n', open ? 'gp-expand' : 'gp-collapse');
+  icon.innerHTML = t(open ? 'gp-expand' : 'gp-collapse');
+}
+
+// ── 상단 랩/경과시간 업데이트 ─────────────────────────────────────────────
+function updateTopBar() {
+  const raceStart = window._racingLapStart ?? D?.sessionStart ?? 0;
+  const raceOn    = simTime >= raceStart;
+
+  const lapEl = document.getElementById('tb-lap');
+  if (lapEl) {
+    if (!raceOn) {
+      lapEl.textContent = 'GRID';
+    } else {
+      const leader = D?.drivers?.find(d => (curState(d.name)?.pos ?? 99) === 1);
+      const st = leader ? curState(leader.name) : null;
+      lapEl.textContent = st ? `LAP ${st.lap} S${st.sector}/${TOTAL_LAPS}` : `LAP —/${TOTAL_LAPS}`;
+    }
+  }
+
+  const timeEl = document.getElementById('tb-time');
+  if (timeEl) {
+    const elapsed = Math.max(0, simTime - raceStart);
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
+    const s = Math.floor(elapsed % 60);
+    timeEl.textContent = raceOn
+      ? (h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+               : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`)
+      : '—:——';
+  }
+
+  const td = document.getElementById('tdisplay');
+  if (td) {
+    const elapsed = Math.max(0, simTime - raceStart);
+    const m = Math.floor(elapsed / 60);
+    const s = Math.floor(elapsed % 60);
+    td.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// I18N — APPLY / TOGGLE
+// ═══════════════════════════════════════════════════════════════════════════
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.innerHTML = t(el.getAttribute('data-i18n'));
+  });
+  const gpNote = document.getElementById('gp-note');
+  if (gpNote) gpNote.innerHTML = t('gp-note');
+  // B&B 패널이 활성화 상태면 언어에 맞게 재렌더링
+  if (_bbActive && _lastBBResult) showBranchBound(_lastBBResult);
+  // btn-play는 현재 재생 상태에 따라 텍스트가 달라짐
+  const btnPlay = document.getElementById('btn-play');
+  if (btnPlay) btnPlay.textContent = playing ? t('ui-pause') : t('ui-play');
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = _lang === 'ko' ? '한국어' : 'EN';
+  document.documentElement.lang = _lang;
+}
+
+function toggleLang() {
+  _lang = _lang === 'ko' ? 'en' : 'ko';
+  applyLang();
+}
+
+</script>
+</body>
+</html>
