@@ -19,10 +19,10 @@ from typing import Any
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_FILE = BASE_DIR / "data" / "telemetry_full.json"
+DATA_FILE   = BASE_DIR / "data" / "telemetry_full.json"
 OUTPUT_FILE = BASE_DIR / "data" / "algorithm_results.json"
 
-TOTAL_LAPS = 53
+TOTAL_LAPS = 53  # 데이터 로드 후 raceMeta.totalLaps 로 덮어씀
 DRS_THRESHOLD = 1.0
 
 
@@ -544,6 +544,9 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
     with DATA_FILE.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
+    global TOTAL_LAPS
+    TOTAL_LAPS = int(data.get("raceMeta", {}).get("totalLaps", TOTAL_LAPS))
+
     engine = RaceAlgorithms(data)
     session_start = float(data["sessionStart"])
     session_end = float(data["sessionEnd"])
@@ -581,26 +584,47 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
             lap_results[str(lap_num)] = dp_engine.compute(name, comp, tl, lap_num, base)
         dp_eta[name] = lap_results
 
-    # ── [분기 한정] 모든 드라이버 피트인 시점마다 대안 전략 최적화 ──────────
-    bb_engine = BranchBoundEngine(engine.cache)
+    # ── [분기 한정] 피트인 + SC 이벤트 시점마다 대안 전략 최적화 ────────────
+    bb_engine  = BranchBoundEngine(engine.cache)
     bb_results: dict[str, list[dict[str, Any]]] = {}
+
+    # SC 이벤트 → 해당 시점 랩 번호 매핑
+    sc_events  = data.get("scEvents", [])
+    sc_lap_set: set[int] = set()
+    if sc_events:
+        for ev in sc_events:
+            if ev.get("action") != "DEPLOY":
+                continue
+            ev_t = float(ev["t"])
+            # 모든 드라이버 랩에서 가장 가까운 랩 번호 찾기
+            for drv_laps_data in data["driverLaps"].values():
+                for row in drv_laps_data:
+                    if row[0] <= ev_t <= row[1]:
+                        sc_lap_set.add(int(row[2]))
+                        break
+        print(f"  SC 이벤트 B&B 트리거 랩: {sorted(sc_lap_set)}")
+
     for drv_name, drv_laps_data in data["driverLaps"].items():
-        drv_base = engine.cache.base_pace(drv_name)
+        drv_base   = engine.cache.base_pace(drv_name)
         seen_pit: set[int] = set()
         drv_bb: list[dict[str, Any]] = []
+
         for row in drv_laps_data:
-            if not row[7]:
-                continue
             pit_lap = int(row[2])
+            is_pit  = bool(row[7])
+            is_sc   = pit_lap in sc_lap_set
+            if not is_pit and not is_sc:
+                continue
             if pit_lap in seen_pit:
                 continue
             seen_pit.add(pit_lap)
-            comp = row[4] or "M"
-            tl   = float(row[5] or 1)
+            comp   = row[4] or "M"
+            tl     = float(row[5] or 1)
             result = bb_engine.optimize(pit_lap, comp, tl, drv_base, driver_name=drv_name, max_stops=2)
             drv_bb.append({
                 **result,
-                "driver": drv_name,
+                "driver":    drv_name,
+                "trigger":   "pit" if is_pit else "sc",
                 "historical": HISTORICAL_STRATEGIES.get(drv_name),
             })
         if drv_bb:
@@ -623,7 +647,7 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
 
 def ensure_algorithm_cache(force: bool = False) -> Path:
     if not DATA_FILE.exists():
-        raise FileNotFoundError(f"{DATA_FILE} does not exist. Run preprocess_telemetry.py first.")
+        raise FileNotFoundError(f"{DATA_FILE} does not exist.")
 
     if not force and OUTPUT_FILE.exists() and OUTPUT_FILE.stat().st_mtime >= DATA_FILE.stat().st_mtime:
         return OUTPUT_FILE
@@ -701,12 +725,19 @@ def validate_cache(output_file: Path = OUTPUT_FILE) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Precompute F1 replay algorithm results.")
-    parser.add_argument("--force", action="store_true", help="rebuild even when the cache is newer than telemetry")
+    parser.add_argument("--force",  action="store_true", help="rebuild even when the cache is newer than telemetry")
+    parser.add_argument("--data",   type=str, default=None, help="telemetry JSON 경로 (기본: data/telemetry_full.json)")
+    parser.add_argument("--output", type=str, default=None, help="알고리즘 캐시 출력 경로 (기본: data/algorithm_results.json)")
     return parser.parse_args()
 
 
 def main() -> None:
+    global DATA_FILE, OUTPUT_FILE
     args = parse_args()
+    if args.data:
+        DATA_FILE   = Path(args.data)
+    if args.output:
+        OUTPUT_FILE = Path(args.output)
     output = ensure_algorithm_cache(force=args.force)
     print(f"Algorithm cache ready: {output}")
     validate_cache(output)
