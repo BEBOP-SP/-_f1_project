@@ -103,10 +103,11 @@ class SpaceTimeCache:
     """
 
     # 타이어 컴파운드 물리 파라미터 2D 룩업 테이블
+    # cliff: 열화 가속 시작 랩 / cliff_mult: cliff 이후 열화율 배수
     COMPOUND_TABLE: dict[str, dict[str, float]] = {
-        "S": {"deg_rate": 0.082, "max_stint": 16.0, "warmup": 2.2},
-        "M": {"deg_rate": 0.041, "max_stint": 28.0, "warmup": 1.4},
-        "H": {"deg_rate": 0.018, "max_stint": 36.0, "warmup": 0.9},
+        "S": {"deg_rate": 0.082, "max_stint": 16.0, "warmup": 2.2, "cliff": 10, "cliff_mult": 6.0},
+        "M": {"deg_rate": 0.041, "max_stint": 28.0, "warmup": 1.4, "cliff": 18, "cliff_mult": 6.0},
+        "H": {"deg_rate": 0.018, "max_stint": 36.0, "warmup": 0.9, "cliff": 28, "cliff_mult": 8.0},
     }
 
     # 섹터별 DRS 존 여부 (폴 리카르: S1·S3 메인스트레이트 구간)
@@ -210,6 +211,15 @@ class BranchBoundEngine:
     def __init__(self, cache: SpaceTimeCache) -> None:
         self.cache = cache
 
+    def _cliff_lap_time(self, comp: str, deg: float, tl: float, base_pace: float) -> float:
+        """cliff age 이후 열화율이 cliff_mult배로 가속되는 랩타임 모델."""
+        props = self.cache.compound(comp)
+        cliff = props.get("cliff", 999)
+        mult  = props.get("cliff_mult", 1.0)
+        if tl <= cliff:
+            return base_pace + deg * tl
+        return base_pace + deg * cliff + deg * mult * (tl - cliff)
+
     def _lower_bound(self, remaining: int, base_pace: float) -> float:
         """하한선: 마모 없는 최고 속도로만 달린다고 가정한 최소 시간."""
         return remaining * base_pace
@@ -239,7 +249,7 @@ class BranchBoundEngine:
 
         props   = self.cache.compound(comp)
         deg     = deg_rates.get(comp, props["deg_rate"])  # 개인 열화율
-        lap_time = base_pace + deg * tl
+        lap_time = self._cliff_lap_time(comp, deg, tl, base_pace)
 
         # Branch 1: 현재 타이어 유지 (stint 한계 미만일 때)
         if tl < props["max_stint"]:
@@ -248,6 +258,7 @@ class BranchBoundEngine:
 
         # Branch 2: 피트인 후 타이어 교체
         if stops_left > 0 and remaining > 2:
+            pit_delta = state.get("pit_delta", self.PIT_DELTA)
             for next_comp in ("S", "M", "H"):
                 if next_comp == comp:
                     continue
@@ -255,13 +266,13 @@ class BranchBoundEngine:
                 new_seq = sequence + [{"lap": lap, "to": next_comp}]
                 self._search(
                     lap + 1, next_comp, 1.0, base_pace,
-                    elapsed + lap_time + self.PIT_DELTA + warmup,
+                    elapsed + lap_time + pit_delta + warmup,
                     new_seq, stops_left - 1, state, deg_rates,
                 )
 
     def optimize(
         self, from_lap: int, comp: str, tl: float, base_pace: float,
-        driver_name: str = "", max_stops: int = 2
+        driver_name: str = "", max_stops: int = 2, pit_delta: float | None = None,
     ) -> dict[str, Any]:
         remaining = TOTAL_LAPS - from_lap
         if remaining <= 0:
@@ -270,10 +281,14 @@ class BranchBoundEngine:
         # 드라이버별 개인 열화율 사전 로딩 (없으면 컴파운드 기본값)
         deg_rates = {c: self.cache.deg_rate(driver_name, c) for c in ("S", "M", "H")}
 
-        # 초기 상한: 현재 타이어로 남은 랩 모두 달리기 (no-pit greedy)
+        # 초기 상한: 현재 타이어로 남은 랩 모두 달리기 (no-pit greedy, cliff 반영)
         dr = deg_rates[comp]
-        greedy = sum(base_pace + dr * (int(tl) + i) for i in range(remaining))
-        state: dict[str, Any] = {"best_time": greedy, "best_seq": []}
+        greedy = sum(self._cliff_lap_time(comp, dr, int(tl) + i, base_pace) for i in range(remaining))
+        state: dict[str, Any] = {
+            "best_time": greedy,
+            "best_seq": [],
+            "pit_delta": pit_delta if pit_delta is not None else self.PIT_DELTA,
+        }
         self._search(from_lap, comp, tl, base_pace, 0.0, [], max_stops, state, deg_rates)
         return {
             "from_lap": from_lap,
@@ -584,51 +599,173 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
             lap_results[str(lap_num)] = dp_engine.compute(name, comp, tl, lap_num, base)
         dp_eta[name] = lap_results
 
-    # ── [분기 한정] 피트인 + SC 이벤트 시점마다 대안 전략 최적화 ────────────
-    bb_engine  = BranchBoundEngine(engine.cache)
-    bb_results: dict[str, list[dict[str, Any]]] = {}
+    # ── [분기 한정] 레이스 시작 전 드라이버별 피트 전략 계산 ─────────────────
+    def _pit_window(opt_lap: int, lo: int, hi: int, half: int = 3) -> tuple[int, int]:
+        return (max(lo, opt_lap - half), min(hi, opt_lap + half))
 
-    # SC 이벤트 → 해당 시점 랩 번호 매핑
-    sc_events  = data.get("scEvents", [])
-    sc_lap_set: set[int] = set()
-    if sc_events:
-        for ev in sc_events:
-            if ev.get("action") != "DEPLOY":
-                continue
-            ev_t = float(ev["t"])
-            # 모든 드라이버 랩에서 가장 가까운 랩 번호 찾기
-            for drv_laps_data in data["driverLaps"].values():
-                for row in drv_laps_data:
-                    if row[0] <= ev_t <= row[1]:
-                        sc_lap_set.add(int(row[2]))
-                        break
-        print(f"  SC 이벤트 B&B 트리거 랩: {sorted(sc_lap_set)}")
+    bb_engine  = BranchBoundEngine(engine.cache)
+    bb_results: dict[str, dict[str, Any]] = {}
 
     for drv_name, drv_laps_data in data["driverLaps"].items():
+        if not drv_laps_data:
+            continue
         drv_base   = engine.cache.base_pace(drv_name)
-        seen_pit: set[int] = set()
-        drv_bb: list[dict[str, Any]] = []
+        first_row  = drv_laps_data[0]
+        start_lap  = int(first_row[2])
+        start_comp = first_row[4] or "M"
 
-        for row in drv_laps_data:
-            pit_lap = int(row[2])
-            is_pit  = bool(row[7])
-            is_sc   = pit_lap in sc_lap_set
-            if not is_pit and not is_sc:
+        strategies: list[dict[str, Any]] = []
+
+        # ① 1-스톱 전략
+        r1 = bb_engine.optimize(start_lap, start_comp, 1.0, drv_base,
+                                driver_name=drv_name, max_stops=1)
+        if r1["optimal_seq"]:
+            stops: list[dict[str, Any]] = []
+            lo = start_lap + 2
+            for s in r1["optimal_seq"]:
+                w = _pit_window(s["lap"], lo, TOTAL_LAPS - 5)
+                stops.append({"to": s["to"], "opt_lap": s["lap"],
+                              "win_start": w[0], "win_end": w[1]})
+                lo = s["lap"] + 5
+            strategies.append({"label": "1-STOP", "stops": stops})
+
+        # ② 2-스톱 전략 (B&B 우선, 모델이 찾지 못하면 3등분 휴리스틱)
+        r2 = bb_engine.optimize(start_lap, start_comp, 1.0, drv_base,
+                                driver_name=drv_name, max_stops=2)
+        if len(r2["optimal_seq"]) >= 2:
+            stops2: list[dict[str, Any]] = []
+            lo = start_lap + 2
+            for s in r2["optimal_seq"]:
+                w = _pit_window(s["lap"], lo, TOTAL_LAPS - 5)
+                stops2.append({"to": s["to"], "opt_lap": s["lap"],
+                               "win_start": w[0], "win_end": w[1]})
+                lo = s["lap"] + 5
+            strategies.append({"label": "2-STOP", "stops": stops2})
+        else:
+            # B&B가 2-스톱을 찾지 못할 때: 레이스를 3등분하는 균형 전략 표시
+            total_dist = TOTAL_LAPS - start_lap
+            pit1_lap = start_lap + total_dist // 3
+            pit2_lap = start_lap + 2 * total_dist // 3
+            # 컴파운드: 시작 → 반대 계열 → 원래 계열 순환
+            _cycle = {"M": ("H", "M"), "H": ("M", "H"), "S": ("M", "H")}
+            pit1_to, pit2_to = _cycle.get(start_comp, ("H", "M"))
+            w1 = _pit_window(pit1_lap, start_lap + 2, TOTAL_LAPS - 12)
+            w2 = _pit_window(pit2_lap, pit1_lap + 5, TOTAL_LAPS - 5)
+            strategies.append({"label": "2-STOP", "stops": [
+                {"to": pit1_to, "opt_lap": pit1_lap,
+                 "win_start": w1[0], "win_end": w1[1]},
+                {"to": pit2_to, "opt_lap": pit2_lap,
+                 "win_start": w2[0], "win_end": w2[1]},
+            ]})
+
+        bb_results[drv_name] = {
+            "driver":     drv_name,
+            "trigger":    "prerace",
+            "start_comp": start_comp,
+            "strategies": strategies,
+        }
+
+    # ── 레이스 전략 랭킹: 출발 컴파운드별 B&B 최적 시간 계산 → 상위 3개 ─────
+    avg_base = (
+        sum(engine.cache.driver_base_pace.values())
+        / max(1, len(engine.cache.driver_base_pace))
+    )
+
+    # 실제 경기에서 사용된 출발 컴파운드만 대상으로
+    candidate_starts: list[str] = sorted({
+        rows[0][4] for rows in data["driverLaps"].values()
+        if rows and rows[0][4]
+    })
+
+    def _race_time_seq(start_comp: str, seq: list[dict[str, Any]]) -> float:
+        """출발 컴파운드 + 피트 시퀀스로 전체 레이스 예상 시간 계산 (cliff 모델)."""
+        pit_map = {s["lap"]: s for s in seq}
+        comp, tl, total = start_comp, 1.0, 0.0
+        for lap in range(1, TOTAL_LAPS):
+            props = engine.cache.COMPOUND_TABLE.get(comp, engine.cache.COMPOUND_TABLE["M"])
+            deg   = props["deg_rate"]
+            lt    = bb_engine._cliff_lap_time(comp, deg, tl, avg_base)
+            if lap in pit_map:
+                next_comp = pit_map[lap]["to"]
+                total += lt + bb_engine.PIT_DELTA + engine.cache.COMPOUND_TABLE[next_comp]["warmup"]
+                comp, tl = next_comp, 1.0
+            else:
+                total += lt
+                tl += 1
+        return total
+
+    candidates: list[dict[str, Any]] = []
+    seen: set[tuple[str, ...]] = set()
+
+    for sc in candidate_starts:
+        for max_stops in (1, 2):
+            r = bb_engine.optimize(1, sc, 1.0, avg_base, max_stops=max_stops)
+            seq = r["optimal_seq"]
+            n_stops = len(seq)
+            if n_stops == 0:
                 continue
-            if pit_lap in seen_pit:
+
+            # 중복 제거: (start_comp, to1, to2, ...)
+            key: tuple[str, ...] = (sc,) + tuple(s["to"] for s in seq)
+            if key in seen:
                 continue
-            seen_pit.add(pit_lap)
-            comp   = row[4] or "M"
-            tl     = float(row[5] or 1)
-            result = bb_engine.optimize(pit_lap, comp, tl, drv_base, driver_name=drv_name, max_stops=2)
-            drv_bb.append({
-                **result,
-                "driver":    drv_name,
-                "trigger":   "pit" if is_pit else "sc",
-                "historical": HISTORICAL_STRATEGIES.get(drv_name),
+            seen.add(key)
+
+            stops: list[dict[str, Any]] = []
+            lo = 3
+            for s in seq:
+                w = _pit_window(s["lap"], lo, TOTAL_LAPS - 5)
+                stops.append({"to": s["to"], "opt_lap": s["lap"],
+                              "win_start": w[0], "win_end": w[1]})
+                lo = s["lap"] + 5
+
+            candidates.append({
+                "label":      f"{n_stops}-STOP",
+                "start_comp": sc,
+                "total_time": round(_race_time_seq(sc, seq), 1),
+                "stops":      stops,
             })
-        if drv_bb:
-            bb_results[drv_name] = drv_bb
+
+        # 2-스톱 B&B가 1-스톱만 반환했을 때: 3등분 휴리스틱 후보 추가
+        r2 = bb_engine.optimize(1, sc, 1.0, avg_base, max_stops=2)
+        if len(r2["optimal_seq"]) < 2:
+            total_dist = TOTAL_LAPS - 1
+            pit1_lap   = 1 + total_dist // 3
+            pit2_lap   = 1 + 2 * total_dist // 3
+            _cycle     = {"M": ("H", "M"), "H": ("M", "H"), "S": ("M", "H")}
+            pit1_to, pit2_to = _cycle.get(sc, ("H", "M"))
+            hkey: tuple[str, ...] = (sc, pit1_to, pit2_to)
+            if hkey not in seen:
+                seen.add(hkey)
+                h_seq = [{"lap": pit1_lap, "to": pit1_to},
+                         {"lap": pit2_lap, "to": pit2_to}]
+                w1 = _pit_window(pit1_lap, 3, TOTAL_LAPS - 12)
+                w2 = _pit_window(pit2_lap, pit1_lap + 5, TOTAL_LAPS - 5)
+                candidates.append({
+                    "label":      "2-STOP",
+                    "start_comp": sc,
+                    "total_time": round(_race_time_seq(sc, h_seq), 1),
+                    "stops":      [
+                        {"to": pit1_to, "opt_lap": pit1_lap,
+                         "win_start": w1[0], "win_end": w1[1]},
+                        {"to": pit2_to, "opt_lap": pit2_lap,
+                         "win_start": w2[0], "win_end": w2[1]},
+                    ],
+                })
+
+    candidates.sort(key=lambda x: x["total_time"])
+    top3     = candidates[:3]
+    best_t   = top3[0]["total_time"] if top3 else 0.0
+    race_strategies: list[dict[str, Any]] = []
+    for rank, s in enumerate(top3, 1):
+        race_strategies.append({
+            "rank":       rank,
+            "label":      s["label"],
+            "start_comp": s["start_comp"],
+            "total_time": s["total_time"],
+            "delta":      round(s["total_time"] - best_t, 1),
+            "stops":      s["stops"],
+        })
 
     return {
         "meta": {
@@ -642,6 +779,8 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
         "frames": frames,
         "dpEta": dp_eta,
         "branchBound": bb_results,
+        "raceStrategies": race_strategies,
+        "driverDegRates": engine.cache.driver_deg_rates,
     }
 
 
@@ -677,12 +816,11 @@ def validate_cache(output_file: Path = OUTPUT_FILE) -> None:
     for name, laps in dp_eta.items():
         sample = list(laps.values())[len(laps) // 2] if laps else {}
         print(f"    {name}: {len(laps)} laps | mid-sample: {sample.get('label', '-')}")
-    # bb is now dict[driver -> list[result]]
-    total_bb = sum(len(v) for v in bb.values()) if isinstance(bb, dict) else len(bb)
-    print(f"  B&B triggers: {total_bb} (across {len(bb)} drivers)")
-    for drv, results in (bb.items() if isinstance(bb, dict) else []):
-        for r in results:
-            print(f"    {drv} Lap {r['from_lap']:2d} -> optimal_seq: {r['optimal_seq']}  ({r['optimal_time']}s)")
+    print(f"  B&B pre-race: {len(bb)} drivers")
+    for drv, r in (bb.items() if isinstance(bb, dict) else []):
+        for strat in r.get("strategies", []):
+            wins = " | ".join(f"L{s['win_start']}-{s['win_end']}→{s['to']}" for s in strat["stops"])
+            print(f"    {drv} {strat['label']}: {wins}")
 
     # Final 2 laps VER-HAM battle / DRS milestone check
     race_end   = float(meta["sessionEnd"])

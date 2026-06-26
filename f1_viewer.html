@@ -151,50 +151,6 @@ body{background:#0a0a0a;color:#e6edf3;font-family:'Segoe UI',-apple-system,sans-
 }
 
 /* ── UNDERCUT PANEL ─────────────────────────────────────────────────────── */
-#undercut-panel{
-  display:flex;align-items:center;gap:0;
-  height:76px;flex-shrink:0;
-  background:#080808;border-top:1px solid #161616;
-  padding:0 14px;font-family:Consolas,monospace;position:relative;
-}
-/* 패널 왼쪽 라벨 */
-#ucp-panel-label{
-  font-size:11px;font-weight:700;letter-spacing:1px;color:#aab4be;
-  writing-mode:vertical-rl;text-orientation:mixed;
-  transform:rotate(180deg);margin-right:12px;flex-shrink:0;
-  text-transform:uppercase;
-}
-/* 빈 상태 */
-#ucp-empty{
-  color:#2a2a2a;font-size:11px;letter-spacing:.3px;
-  display:flex;align-items:center;gap:8px;
-}
-#ucp-data{ display:none;align-items:center;gap:0;flex:1; }
-/* 드라이버 */
-#ucp-drv-color{ width:3px;height:46px;border-radius:2px;flex-shrink:0;margin-right:10px; }
-#ucp-drv-name{ font-size:13px;font-weight:900;letter-spacing:.4px; }
-#ucp-drv-team{ font-size:12px;color:#aab4be;margin-top:2px; }
-/* 확률 미터 (크게) */
-#ucp-prob-wrap{
-  display:flex;flex-direction:column;align-items:center;
-  margin:0 16px;flex-shrink:0;
-}
-#ucp-prob-val{ font-size:30px;font-weight:900;line-height:1;font-family:Consolas;letter-spacing:-1px; }
-#ucp-prob-bar-bg{ width:60px;height:4px;background:#161616;border-radius:2px;margin-top:5px; }
-#ucp-prob-bar{ height:4px;border-radius:2px;width:0%;transition:width .4s,background .4s; }
-#ucp-prob-lbl{ font-size:11px;color:#e6edf3;margin-top:3px;letter-spacing:.6px;text-transform:uppercase; }
-/* 구분선 */
-.ucp-sep{ width:1px;height:40px;background:#161616;margin:0 12px;flex-shrink:0; }
-/* 데이터 블록 */
-.ucp-block{ display:flex;flex-direction:column;align-items:center;min-width:52px; }
-.ucp-lbl{ font-size:11px;color:#e6edf3;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px; }
-.ucp-val{ font-size:14px;font-weight:900;color:#e6edf3;line-height:1;font-family:Consolas; }
-.ucp-sub{ font-size:12px;color:#aab4be;margin-top:3px; }
-/* Layer2 태그 */
-#ucp-algo-tag{
-  position:absolute;top:5px;right:10px;
-  font-size:7px;color:#222;font-family:Consolas;letter-spacing:.4px;
-}
 button.ctrl-btn{
   background:#161616;border:1px solid #222;color:#e6edf3;
   padding:3px 10px;border-radius:4px;cursor:pointer;
@@ -297,6 +253,133 @@ input[type=range]{accent-color:#e10600;cursor:pointer}
 }
 @keyframes pitPulse{
   0%,100%{opacity:1} 50%{opacity:.5}
+}
+/* ── UNDERCUT PROBABILITY PANEL ─────────────────────────────────────────── */
+#uc-panel{
+  background:#070710;border-top:1px solid #0d0d1a;
+  font-family:Consolas,monospace;display:none;
+}
+#uc-inner{
+  display:flex;align-items:center;gap:16px;padding:8px 16px;
+}
+#uc-gauge{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex-shrink:0;
+}
+#uc-pct{
+  font-size:28px;font-weight:900;line-height:1;
+  transition:color .3s;
+}
+#uc-label{
+  font-size:7px;letter-spacing:1.5px;color:#444;
+  text-transform:uppercase;margin-top:2px;
+}
+#uc-mid{flex:1;min-width:0;}
+#uc-title{
+  font-size:9px;font-weight:700;letter-spacing:1.2px;
+  color:#aab4be;text-transform:uppercase;margin-bottom:5px;
+}
+#uc-rival-row{
+  display:flex;align-items:center;gap:8px;margin-bottom:4px;
+}
+#uc-rival-name{
+  font-size:11px;font-weight:900;letter-spacing:.5px;
+}
+#uc-gap-val{
+  font-size:10px;color:#6a8fa8;
+}
+#uc-bar-wrap{
+  height:4px;background:#0d0d1a;border-radius:2px;overflow:hidden;
+}
+#uc-bar{height:100%;border-radius:2px;transition:width .4s,background .4s;}
+#uc-detail{
+  font-size:8px;color:#333;letter-spacing:.5px;margin-top:4px;
+}
+#uc-algo-tag{
+  display:flex;flex-direction:column;align-items:flex-end;
+  justify-content:center;flex-shrink:0;gap:3px;
+}
+.uc-algo-pill{
+  font-size:7px;font-weight:700;letter-spacing:.8px;
+  background:#0e0e1c;color:#2d4a6b;border:1px solid #1a1a2e;
+  border-radius:2px;padding:2px 6px;text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* ── POSSIBLE RACE STRATEGIES (Pirelli 스타일) ──────────────────────────── */
+#strat-panel{
+  background:#080808;border-top:1px solid #161616;
+  font-family:Consolas,monospace;
+}
+#strat-header{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 14px;cursor:pointer;user-select:none;
+}
+#strat-race-name{
+  font-size:9px;font-weight:700;color:#ffd700;letter-spacing:1.2px;
+  text-transform:uppercase;
+}
+#strat-title{
+  font-size:9px;font-weight:700;color:#aab4be;letter-spacing:1.2px;
+  text-transform:uppercase;flex:1;
+}
+.strat-toggle-icon{ font-size:8px;color:#333;letter-spacing:.4px; }
+#strat-body{ padding:4px 14px 10px; }
+/* 전략 행 */
+.sr-row{
+  display:flex;align-items:stretch;height:42px;
+  margin-bottom:4px;border-radius:3px;overflow:hidden;gap:1px;
+}
+/* 순위 뱃지 */
+.sr-rank{
+  width:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;
+}
+.sr-rank-1{ background:#b8860b;color:#fff5cc; }
+.sr-rank-2{ background:#555;color:#ccc; }
+.sr-rank-3{ background:#4a2a0a;color:#c8915a; }
+/* 스틴트 블록 (비율 기반 너비) */
+.sr-stints{
+  flex:1;display:flex;gap:1px;overflow:hidden;
+}
+.sr-stint{
+  display:flex;align-items:center;gap:7px;
+  padding:0 10px;min-width:0;background:#0e0e0e;
+}
+.sr-lap{
+  font-size:9px;font-weight:700;color:#9fb3c8;
+  letter-spacing:.3px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;
+}
+/* 우측 정보 셀 */
+.sr-info{
+  display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
+  padding:0 12px;background:#121212;white-space:nowrap;min-width:100px;gap:2px;
+}
+.sr-type-lbl{
+  font-size:9px;font-weight:900;color:#c9d1d9;letter-spacing:.8px;
+}
+.sr-delta{
+  font-size:9px;font-weight:700;letter-spacing:.4px;
+}
+.sr-delta-best{ color:#ffd700; }
+.sr-delta-gap { color:#6a8fa8; }
+/* 타이어 뱃지 */
+.sr-tire{
+  width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;
+}
+.sr-tire-S,.sr-tire-s{ background:#e8002d;color:#fff; }
+.sr-tire-M,.sr-tire-m{ background:#ffd700;color:#111; }
+.sr-tire-H,.sr-tire-h{ background:#e2e2e2;color:#111; }
+/* 범례 */
+#strat-legend{
+  display:flex;gap:18px;padding:8px 0 2px;
+}
+.sl-item{ display:flex;align-items:center;gap:6px; }
+.sl-name{
+  font-size:8px;color:#444;letter-spacing:.6px;text-transform:uppercase;
 }
 /* ── REAL GP ANALYSIS PANEL ────────────────────────────────────────────── */
 #gp-analysis{
@@ -576,46 +659,44 @@ input[type=range]{accent-color:#e10600;cursor:pointer}
   </div>
 </div>
 
-<!-- PIT STRATEGY PANEL — 컨트롤 바 하단 (항상 표시) -->
-<div id="undercut-panel">
-  <div id="ucp-panel-label" data-i18n="ui-undercut">PIT STRATEGY</div>
-  <div id="ucp-algo-tag">Layer 5 · B&amp;B Pruning</div>
-
-  <!-- 대기 상태: VER 피트인 이전 -->
-  <div id="ucp-empty">
-    <span style="font-size:14px;opacity:.25">⏳</span>
-    <span data-i18n="ucp-empty-line1">VER 피트인 시점 대기 중</span><br>
-    <span data-i18n="ucp-empty-line2" style="color:#333">Lap 18 피트 완료 시 B&amp;B 최적 전략이 자동으로 표시됩니다</span>
+<!-- UNDERCUT PROBABILITY -->
+<div id="uc-panel">
+  <div id="uc-inner">
+    <div id="uc-gauge">
+      <div id="uc-pct">—%</div>
+      <div id="uc-label">UNDERCUT</div>
+    </div>
+    <div id="uc-mid">
+      <div id="uc-title">UNDERCUT SUCCESS PROBABILITY</div>
+      <div id="uc-rival-row">
+        <span id="uc-rival-name" style="color:#aaa">—</span>
+        <span id="uc-gap-val"></span>
+      </div>
+      <div id="uc-bar-wrap"><div id="uc-bar" style="width:0%;background:#2d4a6b"></div></div>
+      <div id="uc-detail">드라이버를 선택하면 실시간 언더컷 확률을 계산합니다</div>
+    </div>
+    <div id="uc-algo-tag">
+      <div class="uc-algo-pill">Monte Carlo</div>
+      <div class="uc-algo-pill">N=500 trials</div>
+      <div class="uc-algo-pill">Cliff Model</div>
+    </div>
   </div>
+</div>
 
-  <!-- 데이터 표시 영역 (드라이버 선택 후) -->
-  <div id="ucp-data">
-    <!-- 드라이버 정보 -->
-    <div id="ucp-drv-color"></div>
-    <div style="margin-right:4px;min-width:52px">
-      <div id="ucp-drv-name">—</div>
-      <div id="ucp-drv-team"></div>
-    </div>
-    <div class="ucp-sep"></div>
-    <!-- B&B 최적 잔여 시간 -->
-    <div id="ucp-prob-wrap">
-      <div id="ucp-prob-val" style="color:#3b82f6;font-size:26px">—</div>
-      <div id="ucp-prob-bar-bg" style="display:none"><div id="ucp-prob-bar"></div></div>
-      <div id="ucp-prob-lbl" data-i18n="bb-lbl-optimal">B&B OPTIMAL</div>
-    </div>
-    <div class="ucp-sep"></div>
-    <!-- 최적 시퀀스 -->
-    <div class="ucp-block" style="min-width:100px">
-      <div class="ucp-lbl" id="ucp-lbl-seq" data-i18n="bb-lbl-seq">OPTIMAL SEQ</div>
-      <div class="ucp-val" id="ucp-gap" style="font-size:11px;color:#ffd700;letter-spacing:.5px">—</div>
-      <div class="ucp-sub" id="ucp-front-name">from L—</div>
-    </div>
-    <!-- 기존 블록 숨김 유지 (updateUndercutPanel 호환) -->
-    <div style="display:none">
-      <div id="ucp-pitloss"></div><div id="ucp-warmup"></div>
-      <div id="ucp-net"></div><div id="ucp-optlap"></div>
-      <div id="ucp-comp"></div><div id="ucp-age-sub"></div>
-      <div id="ucp-pace"></div><div id="ucp-pace-sub"></div>
+<!-- POSSIBLE RACE STRATEGIES (Pirelli 스타일) -->
+<div id="strat-panel">
+  <div id="strat-header" onclick="toggleStratPanel()">
+    <span style="color:#ffd700">◆</span>
+    <span id="strat-race-name">2021 FRENCH GRAND PRIX</span>
+    <span id="strat-title" data-i18n="strat-title">POSSIBLE RACE STRATEGIES</span>
+    <span class="strat-toggle-icon" id="strat-toggle-icon">▼ 접기</span>
+  </div>
+  <div id="strat-body">
+    <div id="strat-rows"><!-- JS 로 생성 --></div>
+    <div id="strat-legend">
+      <div class="sl-item"><div class="sr-tire sr-tire-S">S</div><span class="sl-name">SOFT</span></div>
+      <div class="sl-item"><div class="sr-tire sr-tire-M">M</div><span class="sl-name">MEDIUM</span></div>
+      <div class="sl-item"><div class="sr-tire sr-tire-H">H</div><span class="sl-name">HARD</span></div>
     </div>
   </div>
 </div>
@@ -796,6 +877,7 @@ const STRINGS = {
     'telem-empty':      '타이밍 타워에서 드라이버를 클릭하면 텔레메트리가 표시됩니다',
     'ucp-empty-line1':  '타이밍 타워에서 드라이버를 선택하면',
     'ucp-empty-line2':  '현재 랩 기준 피트스탑 성공 확률을 실시간으로 표시합니다',
+    'strat-title':      'POSSIBLE RACE STRATEGIES',
     'gp-title':         '2021 프랑스 GP 실제 결과 비교 분석',
     'gp-subtitle':      'Decrease &amp; Conquer 모델 vs 실제 전략',
     'gp-expand':        '▶ 펼치기',
@@ -845,7 +927,7 @@ const STRINGS = {
     'ui-play':          '▶ 재생',
     'ui-seek':          '탐색',
     'ui-circuit-info':  'Circuit Paul Ricard · 실제 텔레메트리',
-    'ui-undercut':      '최적 피트 전략',
+    'ui-undercut':      '피트 골든타임',
     'ui-pit-prob':      '피트 성공 확률',
     'ui-gap-front':     '앞차 갭',
     'ui-tyre':          '타이어',
@@ -877,9 +959,9 @@ const STRINGS = {
     'ui-bb-hist':       '실제 전략 (역사)',
     'battles-loading':  '배틀 탐색 중...',
     'ucp-empty-line1':  '피트인 시점 대기 중',
-    'ucp-empty-line2':  '드라이버 피트 완료 시 B&B 최적 전략이 자동 표시됩니다',
-    'bb-lbl-optimal':   'B&B 최적',
-    'bb-lbl-seq':       '최적 시퀀스',
+    'ucp-empty-line2':  '드라이버 피트 완료 시 최적 피트 윈도우가 자동 표시됩니다',
+    'bb-lbl-optimal':   '피트인 권장',
+    'bb-lbl-seq':       '전체 시퀀스',
     'bb-lbl-hist':      '실제 전략',
     'bb-lbl-verdict':   '판정',
     'bb-pit-moment':    '피트인 시점',
@@ -895,6 +977,7 @@ const STRINGS = {
     'telem-empty':      'Click a driver in the timing tower to view telemetry',
     'ucp-empty-line1':  'Select a driver in the timing tower to see',
     'ucp-empty-line2':  'real-time pit stop success probability for the current lap',
+    'strat-title':      'POSSIBLE RACE STRATEGIES',
     'gp-title':         '2021 French GP Actual Result Analysis',
     'gp-subtitle':      'Decrease &amp; Conquer Model vs Actual Strategy',
     'gp-expand':        '▶ EXPAND',
@@ -944,7 +1027,7 @@ const STRINGS = {
     'ui-play':          '▶ PLAY',
     'ui-seek':          'SEEK',
     'ui-circuit-info':  'Circuit Paul Ricard · Real Telemetry',
-    'ui-undercut':      'PIT STRATEGY',
+    'ui-undercut':      'PIT WINDOW',
     'ui-pit-prob':      'PIT NOW PROB',
     'ui-gap-front':     'GAP TO FRONT',
     'ui-tyre':          'TYRE',
@@ -976,9 +1059,9 @@ const STRINGS = {
     'ui-bb-hist':       'ACTUAL STRATEGY (HISTORY)',
     'battles-loading':  'searching...',
     'ucp-empty-line1':  'Waiting for pit stop',
-    'ucp-empty-line2':  'B&B optimal strategy displays automatically when pit completes',
-    'bb-lbl-optimal':   'B&B OPTIMAL',
-    'bb-lbl-seq':       'OPTIMAL SEQ',
+    'ucp-empty-line2':  'Optimal pit window displays automatically when pit completes',
+    'bb-lbl-optimal':   'PIT WINDOW',
+    'bb-lbl-seq':       'SEQUENCE',
     'bb-lbl-hist':      'HISTORICAL',
     'bb-lbl-verdict':   'VERDICT',
     'bb-pit-moment':    'pit moment',
@@ -1015,8 +1098,10 @@ async function loadData() {
   }
   lmsg(t('load-parse')); lbar(72);
   D = JSON.parse(await new Blob(chunks).text());
-  const algoResp = await fetch('./data/algorithm_results.json');
+  TOTAL_LAPS = D.raceMeta?.totalLaps ?? TOTAL_LAPS;
+  const algoResp = await fetch('./data/algorithm_results.json?v=' + Date.now());
   A = algoResp.ok ? await algoResp.json() : null;
+  renderRaceStrategies();
   lmsg(t('load-scene')); lbar(82);
   initCoords(); initScene(); buildTrack(); await buildCars(); initGrid(); bindUI();
   init2DMap();
@@ -1184,10 +1269,9 @@ function drawTrackMap() {
   // ── Draw driver dots (텔레메트리 실제 GPS 우선, 그리드 시 랩 기반 폴백) ──
   const _raceStarted = simTime >= (window._racingLapStart ?? D.sessionStart);
 
-  // 가장 가까운 배틀 쌍 이름 추출 (Layer 3 결과, gap < 5s만)
+  // 가장 가까운 배틀 쌍 이름 추출 — 항상 최근접 쌍, 링은 3초 이내만 표시
   const topBattle = _cachedBattles?.[0];
-  // 5초 이상이면 배틀로 취급하지 않음 (구 캐시 호환용 이중 가드)
-  const battleNames = (topBattle && topBattle.gap < 5)
+  const battleNames = (topBattle && topBattle.gap < 3)
     ? new Set([topBattle.ahead.name, topBattle.behind.name])
     : new Set();
 
@@ -2350,21 +2434,11 @@ function updateTower(){
 // ═══════════════════════════════════════════════════════════════════════════
 function selectDrv(name){
   selectedDriver=name; followTarget=name;
-  _lastBBResult = null; // 드라이버 전환 시 B&B 강제 갱신
   const sel = document.getElementById('pod-driver-sel');
   if (sel) sel.value = name;
   updateTelemBar();
-  updateUndercutPanel(name);
 }
-function updateUndercutPanel(name){
-  if (_bbActive) return; // B&B 결과 표시 중 — 덮어쓰지 않음
-  const emptyEl = document.getElementById('ucp-empty');
-  const dataEl  = document.getElementById('ucp-data');
-  if (!emptyEl || !dataEl) return;
-  // B&B 비활성 상태: 항상 대기 상태 표시
-  emptyEl.style.display = 'flex';
-  dataEl.style.display  = 'none';
-}
+
 
 function updateTelemBar(){
   const name = selectedDriver;
@@ -2519,8 +2593,10 @@ async function switchRace(key) {
     lmsg('파싱 중…'); lbar(68);
     D = JSON.parse(await new Blob(chunks).text());
 
-    const algoResp = await fetch(cfg.algorithm);
+    const algoResp = await fetch(cfg.algorithm + '?v=' + Date.now());
     A = algoResp.ok ? await algoResp.json() : null;
+    TOTAL_LAPS = D.raceMeta?.totalLaps ?? TOTAL_LAPS;
+    renderRaceStrategies();
     lbar(75);
 
     // ── TOTAL_LAPS 갱신 ─────────────────────────────────────────────────
@@ -2542,8 +2618,6 @@ async function switchRace(key) {
     simTime = raceStart - 8;
     selectedDriver = null; followTarget = D.drivers[0]?.name;
     _currentRace = key;
-    Object.keys(_bbRT).forEach(k => delete _bbRT[k]);
-    _lastBBResult = null; _bbActive = false;
     _cachedBattles = []; _drsAvailable = new Set();
     _rtDP?._memo?.clear();
 
@@ -2655,12 +2729,17 @@ function _clearRaceObjects() {
 
 // ── [5] Space-for-Time Cache: O(n) 빌드 → 루프 내 O(1) 조회 ─────────────
 class SpaceTimeCache {
-  static COMPOUND = { S:{deg_rate:0.08,warmup:0.5}, M:{deg_rate:0.05,warmup:0.3}, H:{deg_rate:0.03,warmup:0.2} };
+  static COMPOUND = {
+    S: { deg_rate: 0.082, warmup: 2.2, cliff: 10, cliff_mult: 6.0 },
+    M: { deg_rate: 0.041, warmup: 1.4, cliff: 18, cliff_mult: 6.0 },
+    H: { deg_rate: 0.018, warmup: 0.9, cliff: 28, cliff_mult: 8.0 },
+  };
   static SECTOR_DRS = { 1:false, 2:true, 3:true };
 
-  constructor(drivers, driverLaps) {
-    this.driverMap   = {};
-    this.basePaceMap = {};
+  constructor(drivers, driverLaps, driverDegRates) {
+    this.driverMap    = {};
+    this.basePaceMap  = {};
+    this.degRateMap   = driverDegRates ?? {};
     for (const d of drivers) {
       this.driverMap[d.name] = d;
       const cleanLT = (driverLaps[d.name] ?? [])
@@ -2671,11 +2750,16 @@ class SpaceTimeCache {
         : 95.0;
     }
   }
-  compound(comp)       { return SpaceTimeCache.COMPOUND[comp] ?? SpaceTimeCache.COMPOUND.M; }
-  sectorHasDRS(sector) { return SpaceTimeCache.SECTOR_DRS[sector] ?? false; }
-  basePace(name)       { return this.basePaceMap[name] ?? 95.0; }
-  degRate(name, comp)  { return SpaceTimeCache.COMPOUND[comp]?.deg_rate ?? 0.05; }
-  driver(name)         { return this.driverMap[name] ?? {}; }
+  compound(comp)      { return SpaceTimeCache.COMPOUND[comp] ?? SpaceTimeCache.COMPOUND.M; }
+  sectorHasDRS(s)     { return SpaceTimeCache.SECTOR_DRS[s] ?? false; }
+  basePace(name)      { return this.basePaceMap[name] ?? 95.0; }
+  degRate(name, comp) {
+    // 드라이버별 실측 열화율 우선, 없으면 컴파운드 기본값
+    return this.degRateMap[name]?.[comp]
+      ?? SpaceTimeCache.COMPOUND[comp]?.deg_rate
+      ?? 0.05;
+  }
+  driver(name)        { return this.driverMap[name] ?? {}; }
 }
 
 // ── [3] DP ETA Engine: 메모이제이션으로 O(C×A×R) ───────────────────────
@@ -2704,6 +2788,13 @@ class BranchBoundEngine {
 
   _lb(remaining, pace) { return remaining * pace; }
 
+  _cliffLapTime(comp, deg, tl, pace) {
+    const p = this.cache.compound(comp);
+    const cliff = p.cliff ?? 999, mult = p.cliff_mult ?? 1.0;
+    if (tl <= cliff) return pace + deg * tl;
+    return pace + deg * cliff + deg * mult * (tl - cliff);
+  }
+
   _search(lap, comp, tl, pace, state) {
     if (++state.iters > 600) return;
     const rem = state.totalLaps - lap;
@@ -2712,7 +2803,7 @@ class BranchBoundEngine {
       return;
     }
     if (state.elapsed + this._lb(rem + 1, pace) >= state.bestTime) return;
-    const lt = pace + this.cache.degRate(state.drv, comp) * tl;
+    const lt = this._cliffLapTime(comp, this.cache.degRate(state.drv, comp), tl, pace);
     state.elapsed += lt;
     if (lap === state.totalLaps) {
       if (state.elapsed < state.bestTime) { state.bestTime = state.elapsed; state.bestSeq = [...state.seq]; }
@@ -2736,7 +2827,7 @@ class BranchBoundEngine {
     const deg  = this.cache.degRate(drvName, comp);
     const rem  = TOTAL_LAPS - fromLap;
     let greedy = 0;
-    for (let i = 0; i < rem; i++) greedy += pace + deg * (tl + i);
+    for (let i = 0; i < rem; i++) greedy += this._cliffLapTime(comp, deg, tl + i, pace);
     const state = { drv: drvName, totalLaps: TOTAL_LAPS, bestTime: greedy, bestSeq: [], seq: [], elapsed: 0, iters: 0 };
     this._search(fromLap, comp, tl, pace, state);
     return { driver: drvName, from_lap: fromLap, optimal_time: state.bestTime, optimal_seq: state.bestSeq };
@@ -2744,13 +2835,11 @@ class BranchBoundEngine {
 }
 
 // ── 전역 RT 엔진 인스턴스 ─────────────────────────────────────────────────
-let _rtCache = null, _rtDP = null, _rtBB = null;
-const _bbRT  = {};   // name → { pitLap, result }
+let _rtCache = null, _rtDP = null;
 
 function initRTEngines() {
-  _rtCache = new SpaceTimeCache(D.drivers, D.driverLaps);
+  _rtCache = new SpaceTimeCache(D.drivers, D.driverLaps, A?.driverDegRates ?? {});
   _rtDP    = new DPEtaEngine(_rtCache);
-  _rtBB    = new BranchBoundEngine(_rtCache);
 }
 
 // ── 2D 최근접쌍: 시뮬레이션 GPS 좌표 기반 O(n²), n≤20 ────────────────────
@@ -2758,15 +2847,23 @@ function computeClosestPairBattles(k = 3) {
   const raceOn = simTime >= (window._racingLapStart ?? D.sessionStart);
   if (!raceOn) return [];
 
-  // 활성 드라이버의 현재 GPS 위치 수집
+  // 활성 드라이버의 현재 GPS 위치 수집 (텔레메트리 없으면 랩 기반 위치로 폴백)
   const pts = [];
   for (const d of D.drivers) {
     const ret = window._driverRetirements?.[d.name];
     if (ret && simTime >= ret.retiredAt) continue;
+    let x, y, speed;
     const tel = getTelAt(d.name, simTime);
-    if (!tel) continue;
+    if (tel) {
+      x = tel.x; y = tel.y; speed = tel.speed;
+    } else {
+      const wp = getLapBasedPos(d.name);
+      if (!wp) continue;
+      const raw = worldToRaw(wp.x, wp.z);
+      x = raw.rawX; y = raw.rawY; speed = 200;
+    }
     const fr = getTrackFraction(d.name);
-    pts.push({ name: d.name, color: d.color, x: tel.x, y: tel.y, speed: tel.speed,
+    pts.push({ name: d.name, color: d.color, x, y, speed,
                tp: fr ? fr.lap + fr.t : -Infinity });
   }
   if (pts.length < 2) return [];
@@ -2780,7 +2877,6 @@ function computeClosestPairBattles(k = 3) {
       const distM = Math.sqrt(dx * dx + dy * dy);
       const avgSpeedMs = ((a.speed + b.speed) / 2) / 3.6;
       const gapSec = avgSpeedMs > 1 ? distM / avgSpeedMs : 999;
-      if (gapSec >= 5) continue;
       // 트랙 진행도 기준으로 ahead/behind 결정
       const aIsAhead = a.tp >= b.tp;
       pairs.push({
@@ -2865,19 +2961,20 @@ function getTrackFraction(name) {
 // ═══════════════════════════════════════════════════════════════════════════
 function updateBattlesOverlay() {
   const now = performance.now();
-  if (now - _lastBattles < 500) return;
+  if (now - _lastBattles < 150) return;
   _lastBattles = now;
 
   const battles = findTopBattles_DC(3);
   _cachedBattles = battles;
 
-  // [분할정복] gap < 0.5s → BATTLE TRIGGERED 배너 표시
+  // [분할정복] 배너: 항상 최근접 쌍 표시
   const banner = document.getElementById('battle-trigger-banner');
   if (banner) {
-    const triggered = battles.length > 0 && battles[0].gap < 0.5;
-    if (triggered) {
-      const b = battles[0];
-      banner.textContent = `🔥 BATTLE TRIGGERED — ${b.behind.name} ▷ ${b.ahead.name}  ${b.gap.toFixed(2)}s`;
+    const top = battles.length > 0 ? battles[0] : null;
+    if (top) {
+      const gapStr = top.gap.toFixed(2) + 's';
+      const prefix = top.gap < 0.5 ? '🔥 BATTLE TRIGGERED' : '📡 CLOSEST';
+      banner.textContent = `${prefix} — ${top.behind.name} ▷ ${top.ahead.name}  ${gapStr}`;
       banner.style.display = 'block';
     } else {
       banner.style.display = 'none';
@@ -2892,8 +2989,13 @@ function updateBattlesOverlay() {
     return;
   }
 
-  // [억지기법] 배틀 목록에 DRS 가용 여부 표시 (gap ≤ 1s 전수 체크)
-  list.innerHTML = battles.map(b => {
+  // [억지기법] 배틀 목록에 DRS 가용 여부 표시 (gap ≤ 1s 전수 체크) — 1.5s 이내만 표시
+  const listBattles = battles.filter(b => b.gap < 1.5);
+  if (!listBattles.length) {
+    list.innerHTML = `<div style="color:#333;font-size:9px">—</div>`;
+    return;
+  }
+  list.innerHTML = listBattles.map(b => {
     const gapStr = b.gap < 1 ? b.gap.toFixed(2) + 's' : b.gap.toFixed(1) + 's';
     const drsTag = _drsAvailable.has(b.behind.name)
       ? `<span style="font-size:7px;color:#22c55e;border:1px solid rgba(34,197,94,.5);border-radius:2px;padding:1px 3px;flex-shrink:0">DRS</span>`
@@ -2906,6 +3008,7 @@ function updateBattlesOverlay() {
       <span style="color:#ffd700;margin-left:auto">${gapStr}</span>
     </div>`;
   }).join('');
+
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2940,96 +3043,6 @@ function updateDpEta() {
   list.innerHTML = html || `<div style="color:#333;font-size:9px">—</div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// [분기 한정] B&B 피트 트리거 체크 + 팝업 표시
-// ═══════════════════════════════════════════════════════════════════════════
-let _bbActive = false;    // B&B 패널 활성화 여부 (true면 updateUndercutPanel 스킵)
-let _lastBBResult = null; // 현재 표시 중인 B&B 결과 (변경 감지용)
-
-// 특정 드라이버의 simTime 기준 가장 최근 B&B 결과 반환
-function getBBResultForDriver(name) {
-  if (_rtBB) {
-    const entry = _bbRT[name];
-    if (!entry) return null;
-    const row = D?.driverLaps?.[name]?.find(l => l[2] === entry.result.from_lap);
-    return (row && simTime >= row[0] + (row[8] || 90)) ? entry.result : null;
-  }
-  const results = A?.branchBound?.[name];
-  if (!results?.length) return null;
-  const driverLaps = D?.driverLaps?.[name];
-  if (!driverLaps) return null;
-  let active = null;
-  for (const r of results) {
-    const row = driverLaps.find(lr => lr[2] === r.from_lap);
-    if (!row) continue;
-    if (simTime >= row[0] + (row[8] || 90)) active = r;
-  }
-  return active;
-}
-
-function checkBranchBound() {
-  if (!_rtBB && !A?.branchBound) return;
-  const target = selectedDriver || 'VER';
-
-  if (_rtBB) {
-    const st = curState(target);
-    if (st?.rawPit) {
-      const pitLap = st.lap;
-      if (!_bbRT[target] || _bbRT[target].pitLap !== pitLap) {
-        _bbRT[target] = { pitLap, result: _rtBB.optimize(target, pitLap + 1, st.comp, st.tl ?? 1) };
-      }
-    }
-  }
-
-  const activeResult = getBBResultForDriver(target);
-  if (activeResult === _lastBBResult) return;
-  _lastBBResult = activeResult;
-  if (activeResult) showBranchBound(activeResult);
-  else _resetBBPanel();
-}
-
-function _resetBBPanel() {
-  _bbActive = false;
-  const emptyEl = document.getElementById('ucp-empty');
-  const dataEl  = document.getElementById('ucp-data');
-  if (emptyEl) emptyEl.style.display = 'flex';
-  if (dataEl)  dataEl.style.display  = 'none';
-}
-
-function showBranchBound(result) {
-  const emptyEl = document.getElementById('ucp-empty');
-  const dataEl  = document.getElementById('ucp-data');
-  if (!emptyEl || !dataEl) return;
-
-  _bbActive = true;
-  emptyEl.style.display = 'none';
-  dataEl.style.display  = 'flex';
-
-  // 드라이버 색상
-  const drvInfo = D?.drivers?.find(d => d.name === result.driver);
-  const drvColor = drvInfo?.color || '#3b82f6';
-  document.getElementById('ucp-drv-color').style.background = drvColor;
-  document.getElementById('ucp-drv-name').textContent = result.driver;
-  document.getElementById('ucp-drv-name').style.color  = drvColor;
-  document.getElementById('ucp-drv-team').textContent  = `L${result.from_lap} ${t('bb-pit-moment')}`;
-
-  // B&B 최적 잔여 시간
-  const optTime = result.optimal_time || 0;
-  const m = Math.floor(optTime / 60);
-  const s = (optTime % 60).toFixed(1).padStart(4, '0');
-  document.getElementById('ucp-prob-val').textContent = `${m}:${s}`;
-  document.getElementById('ucp-prob-val').style.color = '#3b82f6';
-
-  // 최적 시퀀스
-  const optSeq = result.optimal_seq || [];
-  const optSeqStr = optSeq.length === 0
-    ? t('bb-no-stop')
-    : optSeq.map(p => `${t('bb-from-lap')}${p.lap}→${p.to}`).join('  ');
-  document.getElementById('ucp-gap').textContent = optSeqStr;
-  document.getElementById('ucp-front-name').textContent =
-    `${_lang === 'ko' ? '기준' : 'from'} ${t('bb-from-lap')}${result.from_lap}`;
-
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN ANIMATION LOOP
@@ -3094,8 +3107,285 @@ function animate() {
   updateSCBanner();
   updateTopBar();
   updateDpEta();          // [DP] 랩별 예상 완주 시간
-  checkBranchBound();     // [B&B] 피트인 시점 팝업 트리거
-  if (selectedDriver) updateUndercutPanel(selectedDriver);
+  updateUndercutPanel();  // [Monte Carlo] 언더컷 성공 확률
+}
+
+// ── [Monte Carlo] 언더컷 성공 확률 계산 ──────────────────────────────────
+// 알고리즘: Monte Carlo Simulation (N=500)
+//   불확실 변수 3개를 확률 분포로 모델링 후 무작위 샘플링 → 성공 비율 = 확률
+//   ① 피트 시간:      Normal(23.5s, σ=1.5s) — F1 피트스톱 변동성
+//   ② 타이어 델타:    Cliff 열화 모델 기반 랩당 페이스 차 ± 10% 노이즈
+//   ③ 상대방 피트랩:  Cliff 모델 예측 잔여 스틴트 ± 3랩 균등 분포
+
+// Python COMPOUND_TABLE과 동기화 (warmup 포함)
+// warmup = 새 타이어 1랩째 온도 미달 페널티(초) — lap 2부터 정상 성능
+const TIRE_PHYS = {
+  S: { deg_rate: 0.082, cliff: 10, cliff_mult: 6.0, max_stint: 16, warmup: 2.2 },
+  M: { deg_rate: 0.041, cliff: 18, cliff_mult: 6.0, max_stint: 28, warmup: 1.4 },
+  H: { deg_rate: 0.018, cliff: 28, cliff_mult: 8.0, max_stint: 36, warmup: 0.9 },
+};
+
+function _cliffLapTime(comp, tireAge, basePace) {
+  const p = TIRE_PHYS[comp] ?? TIRE_PHYS.M;
+  return _cliffLapTimeEx(comp, p.deg_rate, tireAge, basePace);
+}
+// 실측 deg_rate를 직접 받는 버전 (드라이버별 열화율 반영)
+function _cliffLapTimeEx(comp, deg, tireAge, basePace) {
+  const p = TIRE_PHYS[comp] ?? TIRE_PHYS.M;
+  const { cliff: c, cliff_mult: m } = p;
+  if (tireAge <= c) return basePace + deg * tireAge;
+  return basePace + deg * c + deg * m * (tireAge - c);
+}
+
+function _gaussRandom() {
+  let u = 0, v = 0;
+  while (!u) u = Math.random();
+  while (!v) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function monteCarloUndercutProb(myName, myComp, myTireAge, rivalName, rivalComp, rivalTireAge, gapSec, lapsRemaining) {
+  const TRIALS   = 500;
+  const PIT_MEAN = 23.5, PIT_STD = 1.5;
+
+  const myBase    = _rtCache?.basePace(myName)   ?? 95;
+  const rivalBase = _rtCache?.basePace(rivalName) ?? 95;
+
+  // 드라이버별 실측 열화율
+  const nextComp  = myComp === 'H' ? 'M' : myComp === 'M' ? 'H' : 'M';
+  const myCurDeg  = _rtCache?.degRate(myName,    myComp)   ?? TIRE_PHYS[myComp].deg_rate;
+  const myNewDeg  = _rtCache?.degRate(myName,    nextComp) ?? TIRE_PHYS[nextComp].deg_rate;
+  const rivalDeg  = _rtCache?.degRate(rivalName, rivalComp) ?? TIRE_PHYS[rivalComp].deg_rate;
+
+  // ── 내 현재 타이어 상태 분석 ────────────────────────────────────────────
+  const myPhys      = TIRE_PHYS[myComp]    ?? TIRE_PHYS.M;
+  const nextPhys    = TIRE_PHYS[nextComp]  ?? TIRE_PHYS.M;
+  const myPastCliff = myTireAge > myPhys.cliff;
+  const warmup      = nextPhys.warmup ?? 1.4; // 새 타이어 1랩 온도 페널티(초)
+
+  // 내 현재 마모 타이어 랩타임
+  const myWornTime  = _cliffLapTimeEx(myComp,   myCurDeg, myTireAge, myBase);
+  // 내 새 타이어 1랩째 (워밍업 페널티 포함) — 2랩부터는 cliff 모델만
+  const myFreshLap1 = _cliffLapTimeEx(nextComp, myNewDeg, 1, myBase) + warmup;
+  // 피트 직후 즉각 페이스 개선 (1랩째 기준, 워밍업 포함)
+  const myFreshGain = myWornTime - myFreshLap1;
+
+  // ── 상대방 잔여 스틴트 (실측 열화율 기반) ──────────────────────────────
+  const rivalPhys     = TIRE_PHYS[rivalComp] ?? TIRE_PHYS.M;
+  const degRatio      = rivalDeg / (rivalPhys.deg_rate || rivalDeg);
+  const adjustedStint = rivalPhys.max_stint / Math.max(0.5, degRatio);
+  const rivalLapsLeft = Math.max(3, Math.round(adjustedStint - rivalTireAge));
+
+  // ── 랩별 누적 페이스 델타 (내 새 타이어 vs 상대 마모 타이어) ───────────
+  //   lap 1: 내 새 타이어 + warmup 페널티, lap 2+: cliff 마모만
+  //   상대방: rivalTireAge + lap 으로 매 랩 마모 증가
+  const lookAhead = Math.min(rivalLapsLeft, lapsRemaining);
+  const lapDeltas = []; // 랩별 델타 저장 (Monte Carlo 에서 재사용)
+  for (let lap = 1; lap <= lookAhead; lap++) {
+    let myT = _cliffLapTimeEx(nextComp, myNewDeg, lap, myBase);
+    if (lap === 1) myT += warmup;                          // 1랩: 온도 미달 페널티
+    const rvT = _cliffLapTimeEx(rivalComp, rivalDeg, rivalTireAge + lap, rivalBase);
+    lapDeltas.push(rvT - myT);                             // 양수 = 내가 빠름
+  }
+  const avgDeltaPerLap = lapDeltas.length > 0
+    ? lapDeltas.reduce((a, b) => a + b, 0) / lapDeltas.length : 0;
+
+  // ── Monte Carlo 500회 ───────────────────────────────────────────────────
+  let successes = 0;
+  for (let i = 0; i < TRIALS; i++) {
+    const myPitTime    = PIT_MEAN + _gaussRandom() * PIT_STD;
+    const rivalPitTime = PIT_MEAN + _gaussRandom() * PIT_STD;
+    // 상대방 피트 타이밍 샘플 (잔여 스틴트 ± 3랩)
+    const rivalPitIn   = Math.max(1, Math.min(lapsRemaining,
+      rivalLapsLeft + (Math.random() * 6 - 3)));
+
+    // 해당 랩 수까지의 실제 누적 델타 사용 (warmup 포함)
+    // 노이즈: 트랙 온도·그립 조건 ±10%
+    const lapsUsed   = Math.min(Math.round(rivalPitIn), lapDeltas.length);
+    const rawGain    = lapDeltas.slice(0, lapsUsed).reduce((a, b) => a + b, 0);
+    const totalGain  = rawGain * (0.9 + Math.random() * 0.2);
+    // cliff 초과 시 내 타이어가 이미 급격히 느려진 상태 → 새 타이어 추가 이점
+    const cliffBonus = myPastCliff ? myFreshGain * (0.5 + Math.random() * 0.5) : 0;
+
+    // 성공: 총 획득 시간 + 상대방 피트 시간 > 내 불리한 시간(gap + 내 피트)
+    if (totalGain + cliffBonus + rivalPitTime > gapSec + myPitTime) successes++;
+  }
+
+  return {
+    prob: successes / TRIALS,
+    rivalLapsLeft,
+    avgDeltaPerLap,
+    myNewDeg,
+    rivalDeg,
+    myWornTime,
+    myFreshTime: myFreshLap1,
+    myFreshGain,
+    myPastCliff,
+    myTireAge,
+  };
+}
+
+let _ucLastUpdate = 0;
+function updateUndercutPanel() {
+  const panel = document.getElementById('uc-panel');
+  if (!panel) return;
+
+  if (!selectedDriver || !_rtCache) {
+    panel.style.display = 'none'; return;
+  }
+
+  // 초당 1회 갱신
+  const now = performance.now();
+  if (now - _ucLastUpdate < 1000) return;
+  _ucLastUpdate = now;
+
+  const raceOn = simTime >= (window._racingLapStart ?? D.sessionStart);
+  if (!raceOn) { console.log('[UC] hide: raceOn=false'); panel.style.display = 'none'; return; }
+
+  const myState = curState(selectedDriver);
+  if (!myState) { console.log('[UC] hide: myState null'); panel.style.display = 'none'; return; }
+  if (myState.pit) { console.log('[UC] hide: in pit'); panel.style.display = 'none'; return; }
+
+  // 현재 타이밍 타워에서 내 바로 앞 차 찾기
+  const rows = D.drivers
+    .map(d => ({ name: d.name, ...curState(d.name) }))
+    .filter(s => s);
+
+  const sorted = rows
+    .map(s => { const fr = getTrackFraction(s.name); return { ...s, trackPos: fr ? fr.lap + fr.t : -Infinity }; })
+    .sort((a, b) => b.trackPos - a.trackPos);
+
+  const myIdx = sorted.findIndex(s => s.name === selectedDriver);
+  console.log('[UC] myIdx=', myIdx, 'sorted.length=', sorted.length, 'driver=', selectedDriver);
+  if (myIdx <= 0) { panel.style.display = 'none'; return; }
+
+  const rival = sorted[myIdx - 1];
+  const myFr  = getTrackFraction(selectedDriver);
+  const rvFr  = getTrackFraction(rival.name);
+  console.log('[UC] rival=', rival.name, 'myFr=', myFr, 'rvFr=', rvFr);
+  if (!myFr || !rvFr) { console.log('[UC] hide: no trackFraction'); panel.style.display = 'none'; return; }
+
+  // 트랙 기반 시간 갭 계산
+  const gapFrac = rvFr.lap + rvFr.t - (myFr.lap + myFr.t);
+  const gapSec  = gapFrac * (myFr.lapDur || 95);
+  console.log('[UC] gapFrac=', gapFrac.toFixed(4), 'gapSec=', gapSec.toFixed(2));
+  if (gapFrac <= 0) { panel.style.display = 'none'; return; }
+  if (gapSec > 60) { console.log('[UC] hide: gap>60s'); panel.style.display = 'none'; return; }
+
+  const lapsRemaining = Math.max(1, TOTAL_LAPS - myState.lap);
+
+  const result = monteCarloUndercutProb(
+    selectedDriver, myState.comp, myState.tl,
+    rival.name,     rival.comp,   rival.tl,
+    gapSec, lapsRemaining
+  );
+
+  // UI 업데이트
+  const pct   = Math.round(result.prob * 100);
+  const color = pct >= 65 ? '#22c55e' : pct >= 35 ? '#f59e0b' : '#ef4444';
+
+  panel.style.display = 'block';
+  document.getElementById('uc-pct').textContent  = pct + '%';
+  document.getElementById('uc-pct').style.color  = color;
+  document.getElementById('uc-bar').style.width  = pct + '%';
+  document.getElementById('uc-bar').style.background = color;
+
+  const rivalColor = D.drivers.find(d => d.name === rival.name)?.color || '#aaa';
+  document.getElementById('uc-rival-name').textContent = rival.name;
+  document.getElementById('uc-rival-name').style.color = rivalColor;
+  document.getElementById('uc-gap-val').textContent = '+' + gapSec.toFixed(2) + 's';
+
+  const myPhys     = TIRE_PHYS[myState.comp] ?? TIRE_PHYS.M;
+  const nextPhysD  = TIRE_PHYS[myState.comp === 'H' ? 'M' : myState.comp === 'M' ? 'H' : 'M'] ?? TIRE_PHYS.M;
+  const cliffTag   = result.myPastCliff
+    ? ` ⚠ CLIFF+${(myState.tl||0) - myPhys.cliff}랩` : ` (cliff L${myPhys.cliff})`;
+  const freshGainStr = result.myFreshGain > 0
+    ? `+${result.myFreshGain.toFixed(2)}s` : `${result.myFreshGain.toFixed(2)}s`;
+  const deltaStr   = result.avgDeltaPerLap >= 0
+    ? '+' + result.avgDeltaPerLap.toFixed(3) + 's/lap' : result.avgDeltaPerLap.toFixed(3) + 's/lap';
+  document.getElementById('uc-detail').textContent =
+    `내 타이어: ${myState.comp} ${myState.tl||0}랩${cliffTag}  ·  ` +
+    `워밍업: -${nextPhysD.warmup}s (1랩)  ·  즉각이득: ${freshGainStr}  ·  ` +
+    `상대(${rival.comp} ${rival.tl||0}랩) 잔여: ~${result.rivalLapsLeft}랩  ·  평균델타: ${deltaStr}`;
+}
+
+// ── 타이어 전략 패널 ──────────────────────────────────────────────────────
+function toggleStratPanel() {
+  const body = document.getElementById('strat-body');
+  const icon = document.getElementById('strat-toggle-icon');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▶ 펼치기' : '▼ 접기';
+}
+
+function renderRaceStrategies() {
+  const container = document.getElementById('strat-rows');
+  const raceName  = document.getElementById('strat-race-name');
+  if (!container) return;
+
+  if (raceName && D?.raceMeta?.name) raceName.textContent = D.raceMeta.name;
+
+  const strats = A?.raceStrategies;
+  console.log('[strat] A:', !!A, 'raceStrategies:', strats?.length ?? 'none', strats);
+  if (!strats || !strats.length) {
+    container.innerHTML = '<div style="color:#444;font-size:10px;padding:6px 0">전략 데이터 없음 (A='+(A?'loaded':'null')+')</div>';
+    return;
+  }
+
+  const totalLaps = TOTAL_LAPS || D?.raceMeta?.totalLaps || 53;
+
+  container.innerHTML = '';
+  strats.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'sr-row';
+
+    // 순위 뱃지
+    const rankEl = document.createElement('div');
+    rankEl.className = `sr-rank sr-rank-${s.rank}`;
+    rankEl.textContent = s.rank;
+    row.appendChild(rankEl);
+
+    // 스틴트 블록 시퀀스 구성: 스타트 타이어 + 각 피트 후 타이어
+    const stintsWrap = document.createElement('div');
+    stintsWrap.className = 'sr-stints';
+
+    const allStints = [];
+    let curTire  = s.start_comp || 'M';
+    let curStart = 1;
+    (s.stops || []).forEach(stop => {
+      const pitMid = Math.round((stop.win_start + stop.win_end) / 2);
+      allStints.push({ tire: curTire, from: curStart, to: pitMid, pitWin: [stop.win_start, stop.win_end] });
+      curTire  = stop.to;
+      curStart = pitMid;
+    });
+    allStints.push({ tire: curTire, from: curStart, to: totalLaps, pitWin: null });
+
+    allStints.forEach(stint => {
+      const lapCount = Math.max(1, stint.to - stint.from);
+      const el = document.createElement('div');
+      el.className = 'sr-stint';
+      el.style.flex = lapCount;
+      const lapLabel = stint.pitWin
+        ? `L${stint.from}→PIT L${stint.pitWin[0]}-${stint.pitWin[1]}`
+        : `L${stint.from}→FIN`;
+      el.innerHTML =
+        `<div class="sr-tire sr-tire-${stint.tire}">${stint.tire}</div>` +
+        `<span class="sr-lap">${lapLabel}</span>`;
+      stintsWrap.appendChild(el);
+    });
+    row.appendChild(stintsWrap);
+
+    // 우측: 스탑 수 + 시간 델타
+    const infoEl = document.createElement('div');
+    infoEl.className = 'sr-info';
+    const deltaHtml = s.delta === 0
+      ? `<span class="sr-delta sr-delta-best">FASTEST</span>`
+      : `<span class="sr-delta sr-delta-gap">+${s.delta.toFixed(1)}s</span>`;
+    infoEl.innerHTML = `<span class="sr-type-lbl">${s.label}</span>${deltaHtml}`;
+    row.appendChild(infoEl);
+
+    container.appendChild(row);
+  });
 }
 
 // ── 분석 패널 펼치기/접기 ─────────────────────────────────────────────────
@@ -3154,8 +3444,6 @@ function applyLang() {
   });
   const gpNote = document.getElementById('gp-note');
   if (gpNote) gpNote.innerHTML = t('gp-note');
-  // B&B 패널이 활성화 상태면 언어에 맞게 재렌더링
-  if (_bbActive && _lastBBResult) showBranchBound(_lastBBResult);
   // btn-play는 현재 재생 상태에 따라 텍스트가 달라짐
   const btnPlay = document.getElementById('btn-play');
   if (btnPlay) btnPlay.textContent = playing ? t('ui-pause') : t('ui-play');
