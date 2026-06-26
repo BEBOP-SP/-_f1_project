@@ -103,10 +103,11 @@ class SpaceTimeCache:
     """
 
     # 타이어 컴파운드 물리 파라미터 2D 룩업 테이블
+    # cliff: 열화 가속 시작 랩 / cliff_mult: cliff 이후 열화율 배수
     COMPOUND_TABLE: dict[str, dict[str, float]] = {
-        "S": {"deg_rate": 0.082, "max_stint": 16.0, "warmup": 2.2},
-        "M": {"deg_rate": 0.041, "max_stint": 28.0, "warmup": 1.4},
-        "H": {"deg_rate": 0.018, "max_stint": 36.0, "warmup": 0.9},
+        "S": {"deg_rate": 0.082, "max_stint": 16.0, "warmup": 2.2, "cliff": 10, "cliff_mult": 6.0},
+        "M": {"deg_rate": 0.041, "max_stint": 28.0, "warmup": 1.4, "cliff": 18, "cliff_mult": 6.0},
+        "H": {"deg_rate": 0.018, "max_stint": 36.0, "warmup": 0.9, "cliff": 28, "cliff_mult": 8.0},
     }
 
     # 섹터별 DRS 존 여부 (폴 리카르: S1·S3 메인스트레이트 구간)
@@ -210,6 +211,15 @@ class BranchBoundEngine:
     def __init__(self, cache: SpaceTimeCache) -> None:
         self.cache = cache
 
+    def _cliff_lap_time(self, comp: str, deg: float, tl: float, base_pace: float) -> float:
+        """cliff age 이후 열화율이 cliff_mult배로 가속되는 랩타임 모델."""
+        props = self.cache.compound(comp)
+        cliff = props.get("cliff", 999)
+        mult  = props.get("cliff_mult", 1.0)
+        if tl <= cliff:
+            return base_pace + deg * tl
+        return base_pace + deg * cliff + deg * mult * (tl - cliff)
+
     def _lower_bound(self, remaining: int, base_pace: float) -> float:
         """하한선: 마모 없는 최고 속도로만 달린다고 가정한 최소 시간."""
         return remaining * base_pace
@@ -239,7 +249,7 @@ class BranchBoundEngine:
 
         props   = self.cache.compound(comp)
         deg     = deg_rates.get(comp, props["deg_rate"])  # 개인 열화율
-        lap_time = base_pace + deg * tl
+        lap_time = self._cliff_lap_time(comp, deg, tl, base_pace)
 
         # Branch 1: 현재 타이어 유지 (stint 한계 미만일 때)
         if tl < props["max_stint"]:
@@ -248,6 +258,7 @@ class BranchBoundEngine:
 
         # Branch 2: 피트인 후 타이어 교체
         if stops_left > 0 and remaining > 2:
+            pit_delta = state.get("pit_delta", self.PIT_DELTA)
             for next_comp in ("S", "M", "H"):
                 if next_comp == comp:
                     continue
@@ -255,13 +266,13 @@ class BranchBoundEngine:
                 new_seq = sequence + [{"lap": lap, "to": next_comp}]
                 self._search(
                     lap + 1, next_comp, 1.0, base_pace,
-                    elapsed + lap_time + self.PIT_DELTA + warmup,
+                    elapsed + lap_time + pit_delta + warmup,
                     new_seq, stops_left - 1, state, deg_rates,
                 )
 
     def optimize(
         self, from_lap: int, comp: str, tl: float, base_pace: float,
-        driver_name: str = "", max_stops: int = 2
+        driver_name: str = "", max_stops: int = 2, pit_delta: float | None = None,
     ) -> dict[str, Any]:
         remaining = TOTAL_LAPS - from_lap
         if remaining <= 0:
@@ -270,10 +281,14 @@ class BranchBoundEngine:
         # 드라이버별 개인 열화율 사전 로딩 (없으면 컴파운드 기본값)
         deg_rates = {c: self.cache.deg_rate(driver_name, c) for c in ("S", "M", "H")}
 
-        # 초기 상한: 현재 타이어로 남은 랩 모두 달리기 (no-pit greedy)
+        # 초기 상한: 현재 타이어로 남은 랩 모두 달리기 (no-pit greedy, cliff 반영)
         dr = deg_rates[comp]
-        greedy = sum(base_pace + dr * (int(tl) + i) for i in range(remaining))
-        state: dict[str, Any] = {"best_time": greedy, "best_seq": []}
+        greedy = sum(self._cliff_lap_time(comp, dr, int(tl) + i, base_pace) for i in range(remaining))
+        state: dict[str, Any] = {
+            "best_time": greedy,
+            "best_seq": [],
+            "pit_delta": pit_delta if pit_delta is not None else self.PIT_DELTA,
+        }
         self._search(from_lap, comp, tl, base_pace, 0.0, [], max_stops, state, deg_rates)
         return {
             "from_lap": from_lap,
@@ -620,7 +635,9 @@ def build_algorithm_cache(step: float = 1.0) -> dict[str, Any]:
             seen_pit.add(pit_lap)
             comp   = row[4] or "M"
             tl     = float(row[5] or 1)
-            result = bb_engine.optimize(pit_lap, comp, tl, drv_base, driver_name=drv_name, max_stops=2)
+            # SC 상황에서는 피트 손실 시간이 절반 이하 (~12s vs 정상 23.5s)
+            sc_delta = 12.0 if is_sc else None
+            result = bb_engine.optimize(pit_lap, comp, tl, drv_base, driver_name=drv_name, max_stops=2, pit_delta=sc_delta)
             drv_bb.append({
                 **result,
                 "driver":    drv_name,
